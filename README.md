@@ -76,9 +76,11 @@ mc-radiative-transfer/
 
 ## Phases
 
-- [x] **Phase 1**: Monte Carlo engine (photon transport simulation)
-- [ ] **Phase 2**: Beaming function extraction (histogram → I(μ) curve)
-- [ ] **Phase 3**: Pulse profile synthesis (apply to NICER geometry)
+- [x] **Weeks 1-2**: Physics Setup & Environment (Thomson utilities, testing framework)
+- [x] **Weeks 3-4**: Monte Carlo Engine (Photon transport, boundary handling)
+- [x] **Week 5**: Validation & Benchmarking (Energy conservation, MFP verification)
+- [ ] **Weeks 6-7**: Beaming function extraction (histogram → I(μ) curve)
+- [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
 
 ---
