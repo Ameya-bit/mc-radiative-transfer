@@ -43,7 +43,8 @@ def plot_beaming_function(tau_total=10.0, num_photons=20000):
     # We normalize it for comparison
     mu_range = np.linspace(0, 1, 100)
     theory = (1 + 1.5 * mu_range) 
-    theory /= np.trapz(theory, mu_range) # Normalize to same area as density hist
+    # Use np.trapezoid (NumPy 2.0+) or manual integration
+    theory /= np.trapezoid(theory, mu_range) 
     
     plt.plot(mu_range, theory, 'r--', label='Eddington Approximation (1 + 1.5μ)')
     
