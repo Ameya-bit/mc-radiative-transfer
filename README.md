@@ -10,16 +10,17 @@ equally in all directions; this project tests how wrong that assumption is.
 
 > **For the full math** behind every step, each progress-log entry links to a matching
 > **deep dive** in [`docs/deep-dives/`](docs/deep-dives/) — plain-language, figure-by-figure
-> derivations of that week's physics.
+> derivations of that version's physics.
 
 ---
 
 ## Progress Log
 
-*Newest first. Each entry: a one-line headline, why it matters, a figure, and the technical
-details tucked underneath. Week numbers follow the 10-week project plan.*
+*Newest first, tagged by version. Each entry has a one-line headline, why it matters, a figure,
+and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
+plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
-### Week 6 — The beaming function matches theory, after fixing flux vs. intensity
+### v0.5.1 — The beaming function matches theory, after fixing flux vs. intensity
 *2026-05-28*
 
 **A reviewer flagged that our beaming curve didn't follow theory. The cause was measuring the
@@ -34,7 +35,7 @@ fit settling down as the statistics improve.
 
 ![Corrected beaming function: specific intensity vs. Eddington and Chandrasekhar H](data/beaming_function.png)
 
-📐 **Full derivation:** [Week 6 — Beaming Function: Flux vs. Intensity](docs/deep-dives/week-6-beaming-function-correction.md)
+📐 **Full derivation:** [v0.5.1 — Beaming Function: Flux vs. Intensity](docs/deep-dives/v0.5.1-beaming-correction.md)
 
 <details>
 <summary>Technical details</summary>
@@ -55,7 +56,7 @@ fit settling down as the statistics improve.
 
 ---
 
-### Week 5 — The engine passes its conservation checks
+### v0.5.0 — Engine validated: conservation & mean free path
 *2026-03-14 · commits `f21738d`–`a3abc18`*
 
 **Two physics-independent bookkeeping checks confirm the random walk is sound: no photons are
@@ -66,7 +67,7 @@ photon ends as either *escaped* or *absorbed* — nothing vanishes or is double-
 the mean distance between scatters comes out to one optical depth, exactly as the `−ln(U)`
 sampling demands. We also extracted a first beaming function from the escape angles — but
 comparing it to theory surfaced a subtle measurement error (binning flux rather than intensity),
-which is corrected in Week 6 above.
+which is corrected in v0.5.1 above.
 
 <details>
 <summary>Technical details</summary>
@@ -75,17 +76,17 @@ which is corrected in Week 6 above.
   5000/5000 accounted for, exactly.
 - **Mean free path:** total path length ÷ total scatters ≈ **1.0** optical depth (measured
   ~1.00–1.03), confirming the `−ln(U)` step sampling is correct.
-- First beaming-function extraction revealed a flux-vs-intensity mismatch — resolved in Week 6.
+- First beaming-function extraction revealed a flux-vs-intensity mismatch — resolved in v0.5.1.
 - Code: `scripts/validate_engine.py`.
 </details>
 
-📐 **Full derivation:** [Week 5 — Validation & the Beaming Function](docs/deep-dives/week-5-validation.md)
+📐 **Full derivation:** [v0.5.0 — Validation & the Beaming Function](docs/deep-dives/v0.5.0-validation.md)
 
-**Next:** correct the beaming-function measurement and compare to analytic limb-darkening laws (Week 6).
+**Next:** correct the beaming-function measurement and compare to analytic limb-darkening laws (v0.5.1).
 
 ---
 
-### Weeks 3–4 — Photons travel through the atmosphere end-to-end
+### v0.2.0 — Photons travel through the atmosphere end-to-end
 *2026-03-14 · commit `f21738d`*
 
 **A photon can now be injected at the base of the atmosphere, scatter its way through, and
@@ -100,7 +101,7 @@ physics general.
 
 ![Photon random walks through atmospheres of increasing thickness](docs/deep-dives/figures/07_random_walks.png)
 
-📐 **Full derivation:** [Weeks 3–4 — Photon Transport](docs/deep-dives/weeks-3-4-photon-transport.md)
+📐 **Full derivation:** [v0.2.0 — Photon Transport](docs/deep-dives/v0.2.0-photon-transport.md)
 
 <details>
 <summary>Technical details</summary>
@@ -108,18 +109,18 @@ physics general.
 - **Geometry:** 3D Cartesian in optical-depth coordinates; τ = 0 is the top (escape), τ =
   τ_total is the bottom (injection). Plane-parallel slab.
 - **Injection:** isotropic over the upward hemisphere (uniform in cos θ, not in θ — see the
-  [Weeks 3–4 deep dive](docs/deep-dives/weeks-3-4-photon-transport.md)).
+  [v0.2.0 deep dive](docs/deep-dives/v0.2.0-photon-transport.md)).
 - **Transport:** step size `Δτ = −ln(U)` (exponential free path); Thomson phase function
   `(3/4)(1 + μ²)` via rejection sampling; 3D direction update via `rotate_vector`.
 - **Boundaries:** escape at τ ≤ 0 (record exit μ), absorb at τ ≥ τ_total.
 - Code: `src/mcrt/monte_carlo.py` (`Photon`, `Simulation`).
 </details>
 
-**Next:** validate the random walk against analytic limits (Week 5).
+**Next:** validate the random walk against analytic limits (v0.5.0).
 
 ---
 
-### Weeks 1–2 — The building blocks are in place and tested
+### v0.1.0 — The building blocks are in place and tested
 *2026-01-24 → 2026-03-14 · commits `ab83703`, `f50cd2a`*
 
 **Every random-sampling primitive the simulation depends on is written and unit-tested.**
@@ -127,11 +128,11 @@ physics general.
 Before tracking a single photon we needed the small mathematical tools that the random walk is
 built from: how far a photon travels before it scatters, which direction it scatters into, and
 how to point it correctly in 3D afterward. Each of these is a short, independently-tested
-function, so when the full engine was assembled in Weeks 3–4 we already trusted its parts.
+function, so when the full engine was assembled in v0.2.0 we already trusted its parts.
 
 ![Sampling primitives: the Thomson phase function](docs/deep-dives/figures/04_thomson_phase.png)
 
-📐 **Full derivation:** [Weeks 1–2 — Sampling Primitives](docs/deep-dives/weeks-1-2-sampling-primitives.md)
+📐 **Full derivation:** [v0.1.0 — Sampling Primitives](docs/deep-dives/v0.1.0-sampling-primitives.md)
 
 <details>
 <summary>Technical details</summary>
@@ -203,17 +204,17 @@ mc-radiative-transfer/
 │   ├── test_physics.py        # Unit tests for the primitives
 │   └── test_theory.py         # Unit tests for the H-function
 ├── docs/
-│   ├── deep-dives/            # Per-entry math deep dives
-│   │   ├── weeks-1-2-sampling-primitives.md
-│   │   ├── weeks-3-4-photon-transport.md
-│   │   ├── week-5-validation.md
-│   │   ├── week-6-beaming-function-correction.md
+│   ├── deep-dives/            # Per-version math deep dives
+│   │   ├── v0.1.0-sampling-primitives.md
+│   │   ├── v0.2.0-photon-transport.md
+│   │   ├── v0.5.0-validation.md
+│   │   ├── v0.5.1-beaming-correction.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
 │   ├── RNAA_draft.pdf         # Paper draft
 │   └── proposal/              # Proposal + future directions
-└── data/                      # Simulation outputs (plots + Week 6+ data)
+└── data/                      # Simulation outputs (plots + raw data)
 ```
 
 ### Setup & usage
@@ -228,10 +229,12 @@ pytest                              # run the unit tests
 
 ### Timeline
 
-- [x] **Weeks 1-2**: Physics setup & environment (Thomson utilities, testing framework)
-- [x] **Weeks 3-4**: Monte Carlo engine (photon transport, boundary handling)
-- [x] **Week 5**: Validation & benchmarking (energy conservation, mean free path)
-- [x] **Week 6**: Beaming function corrected (flux→intensity) & validated vs. Eddington / Chandrasekhar H
+*The 10-week plan, with the version each milestone shipped as:*
+
+- [x] **Weeks 1-2 — v0.1.0**: Physics setup & sampling primitives
+- [x] **Weeks 3-4 — v0.2.0**: Monte Carlo engine (photon transport, boundary handling)
+- [x] **Week 5 — v0.5.0**: Validation & benchmarking (energy conservation, mean free path)
+- [x] **Patch — v0.5.1**: Beaming function corrected (flux→intensity), validated vs. Eddington / Chandrasekhar H
 - [ ] **Weeks 6-7**: Beaming function extraction across τ_total values
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
@@ -240,13 +243,14 @@ pytest                              # run the unit tests
 
 ## How to update the progress log
 
-Each week produces **two** linked pieces: a short entry at the **top** of the Progress Log, and
-a companion **deep dive** in [`docs/deep-dives/`](docs/deep-dives/) holding the full math. Keep
-the entry headline plain-physics (no code jargon); put code in `<details>` and the derivations
-in the deep dive.
+Each version produces **two** linked pieces: a short entry at the **top** of the Progress Log,
+and a companion **deep dive** in [`docs/deep-dives/`](docs/deep-dives/) holding the full math.
+Bump the version in `pyproject.toml`, name the deep dive `vMAJOR.MINOR.PATCH-<slug>.md`, and keep
+the entry headline plain-physics (no code jargon); put code in `<details>` and the derivations in
+the deep dive.
 
 ```markdown
-### Week N — <plain-physics headline read in 30 seconds>
+### vX.Y.Z — <plain-physics headline read in 30 seconds>
 *<date>* · commits `abcd123`–`efgh456`
 
 **<One bold sentence: what now works and why it matters for the science.>**
@@ -255,7 +259,7 @@ in the deep dive.
 
 ![caption](docs/deep-dives/figures/NN_figure.png)
 
-📐 **Full derivation:** [Week N — <title>](docs/deep-dives/week-N-<slug>.md)
+📐 **Full derivation:** [vX.Y.Z — <title>](docs/deep-dives/vX.Y.Z-<slug>.md)
 
 <details>
 <summary>Technical details</summary>
@@ -273,5 +277,5 @@ For the companion deep dive, copy an existing file in `docs/deep-dives/` as a te
 with a link back to its progress-log entry, a **Builds on:** line pointing to the prior deep
 dive, the derivation with figures (regenerate via `make_figures.py`), and a closing **Next:**.
 
-Workflow: when a week's work is committed, both pieces are drafted from that week's commits and
-figures, then the physics framing is reviewed before they land.
+Workflow: when a version's work is committed, both pieces are drafted from that version's commits
+and figures, then the physics framing is reviewed before they land.
