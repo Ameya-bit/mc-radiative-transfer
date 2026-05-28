@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mcrt import Simulation
+from mcrt import (
+    Simulation,
+    chandrasekhar_h,
+    eddington_limb_darkening,
+    extract_intensity,
+    fit_limb_darkening_slope,
+)
 
 def validate_energy_conservation(tau_total=1.0, num_photons=5000):
     """Verify that every photon is either escaped or absorbed."""
@@ -28,32 +34,32 @@ def validate_mean_free_path(tau_total=10.0, num_photons=1000):
     else:
         print("! Mean Free Path: No scatterings occurred (check tau_total).")
 
-def plot_beaming_function(tau_total=10.0, num_photons=20000):
-    """Generate and plot the beaming function I(mu)."""
-    print(f"Running simulation for beaming function (tau={tau_total})...")
+def plot_beaming_function(tau_total=10.0, num_photons=200000, n_bins=20):
+    """Extract the beaming function I(μ) and compare to Eddington and Chandrasekhar."""
+    print(f"Running simulation for beaming function (tau={tau_total}, N={num_photons})...")
     sim = Simulation(tau_total=tau_total, num_photons=num_photons)
     sim.run()
-    
-    mus = sim.results['escaped_mu']
-    
+
+    mu_centers, intensity = extract_intensity(sim.results['escaped_mu'], n_bins=n_bins)
+    slope = fit_limb_darkening_slope(mu_centers, intensity)
+    print(f"  Best-fit limb-darkening slope b = {slope:.3f} (Eddington predicts 1.5)")
+
+    # Theory curves, normalized to 1 at μ=1 to match the MC normalization.
+    mu_th = np.linspace(1e-3, 1.0, 200)
+    edd = eddington_limb_darkening(mu_th) / eddington_limb_darkening(1.0)
+    H = chandrasekhar_h(mu_th)
+    H = H / chandrasekhar_h(1.0)[0]
+
     plt.figure(figsize=(8, 6))
-    plt.hist(mus, bins=25, density=True, alpha=0.7, label=f'MC Result (tau={tau_total})')
-    
-    # Theory: For a semi-infinite atmosphere (Eddington limit), I(mu) ~ 1 + 1.5*mu
-    # We normalize it for comparison
-    mu_range = np.linspace(0, 1, 100)
-    theory = (1 + 1.5 * mu_range) 
-    # Use np.trapezoid (NumPy 2.0+) or manual integration
-    theory /= np.trapezoid(theory, mu_range) 
-    
-    plt.plot(mu_range, theory, 'r--', label='Eddington Approximation (1 + 1.5μ)')
-    
+    plt.plot(mu_centers, intensity, 'o', color="#2c7fb8", label=f'MC intensity I(μ) (τ={tau_total})')
+    plt.plot(mu_th, edd, 'r--', label='Eddington (1 + 1.5μ)')
+    plt.plot(mu_th, H, 'g-', label='Chandrasekhar H(μ)')
     plt.xlabel(r'$\mu = \cos(\theta)$')
-    plt.ylabel('Intensity (Normalized)')
-    plt.title('Beaming Function Extraction')
+    plt.ylabel(r'Specific intensity $I(\mu)$ (normalized to $\mu=1$)')
+    plt.title('Beaming Function: specific intensity vs. theory')
     plt.legend()
     plt.grid(True, alpha=0.3)
-    
+
     output_path = 'data/beaming_function.png'
     plt.savefig(output_path)
     print(f"✓ Beaming function plot saved to {output_path}")

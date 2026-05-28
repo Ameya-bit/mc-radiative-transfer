@@ -19,36 +19,69 @@ equally in all directions; this project tests how wrong that assumption is.
 *Newest first. Each entry: a one-line headline, why it matters, a figure, and the technical
 details tucked underneath. Week numbers follow the 10-week project plan.*
 
-### Week 5 — The engine is physically validated
-*2026-03-14 · commits `f21738d`–`a3abc18`*
+### Week 6 — The beaming function matches theory, after fixing flux vs. intensity
+*2026-05-28*
 
-**The simulation now reproduces a textbook result: the escaping radiation is "limb-darkened"
-exactly the way classical theory predicts.**
+**A reviewer flagged that our beaming curve didn't follow theory. The cause was measuring the
+wrong quantity — once corrected, it tracks the classical limb-darkening laws.**
 
-This is the milestone that says the engine can be trusted. We let photons scatter through a
-thick atmosphere, histogrammed the angles at which they escaped, and compared that to the
-century-old Eddington prediction that a scattering atmosphere should look brightest face-on and
-dimmest at the edge (the same effect that makes the edge of the Sun look dim). The Monte Carlo
-result lands right on the predicted `1 + 1.5μ` curve. Two independent sanity checks also pass,
-so we know no photons are being silently lost or created.
+The original code histogrammed escaping photons directly, which measures the emergent *flux* —
+not the *specific intensity* that the Eddington and Chandrasekhar laws describe. A photon
+escaping at angle θ carries a factor μ = cos θ of normal flux, so dividing the binned counts by
+μ recovers the intensity. After the fix, the Monte Carlo curve sits right between the Eddington
+`1 + 1.5μ` law and the exact Chandrasekhar H-function, and a photon-count study shows the best
+fit settling down as the statistics improve.
 
-![Beaming function: Monte Carlo result vs. the Eddington 1 + 1.5μ prediction](data/beaming_function.png)
+![Corrected beaming function: specific intensity vs. Eddington and Chandrasekhar H](data/beaming_function.png)
 
-📐 **Full derivation:** [Week 5 — Validation & the Beaming Function](docs/deep-dives/week-5-validation.md)
+📐 **Full derivation:** [Week 6 — Beaming Function: Flux vs. Intensity](docs/deep-dives/week-6-beaming-function-correction.md)
 
 <details>
 <summary>Technical details</summary>
 
-- **Beaming function** `I(μ)`: histogram of escape angles `μ = cos θ` for a thick slab
-  (τ_total = 10), overlaid on the semi-infinite Eddington limit `I(μ) ∝ 1 + 1.5μ` — they match.
+- **The fix:** `I(μ) ∝ N(μ)/μ` — divide the binned escape counts by the bin-center μ to convert
+  the measured flux into specific intensity.
+- **Best fit:** limb-darkening slope `b ≈ 1.7` (Eddington predicts 1.5; the true H-function is
+  slightly steeper than the linear law, so `b > 1.5` is expected).
+- **Parameter study:** `data/beaming_convergence.png` — the fitted slope is noisy at low photon
+  counts and settles toward ~1.7 as N grows from 2k → 200k (a convergence trend, not drift).
+- **New code:** `src/mcrt/theory.py` (Chandrasekhar H-function), `src/mcrt/beaming.py`
+  (flux→intensity extraction), `scripts/convergence_study.py`.
+- **Magnetic effects:** still deferred — to be considered only once the beaming function is fully
+  pinned down.
+</details>
+
+**Next:** extract beaming functions across a range of τ_total values, then pulse-profile synthesis.
+
+---
+
+### Week 5 — The engine passes its conservation checks
+*2026-03-14 · commits `f21738d`–`a3abc18`*
+
+**Two physics-independent bookkeeping checks confirm the random walk is sound: no photons are
+lost or created, and they travel the right average distance between scatters.**
+
+We validated the engine two ways that rely on no astrophysics at all. First, every injected
+photon ends as either *escaped* or *absorbed* — nothing vanishes or is double-counted. Second,
+the mean distance between scatters comes out to one optical depth, exactly as the `−ln(U)`
+sampling demands. We also extracted a first beaming function from the escape angles — but
+comparing it to theory surfaced a subtle measurement error (binning flux rather than intensity),
+which is corrected in Week 6 above.
+
+<details>
+<summary>Technical details</summary>
+
 - **Energy/photon conservation:** every injected photon ends as either *escaped* or *absorbed*;
   5000/5000 accounted for, exactly.
 - **Mean free path:** total path length ÷ total scatters ≈ **1.0** optical depth (measured
-  ~1.00–1.02), confirming the `−ln(U)` step sampling is correct.
+  ~1.00–1.03), confirming the `−ln(U)` step sampling is correct.
+- First beaming-function extraction revealed a flux-vs-intensity mismatch — resolved in Week 6.
 - Code: `scripts/validate_engine.py`.
 </details>
 
-**Next:** extract beaming functions across a range of atmosphere thicknesses (Weeks 6–7).
+📐 **Full derivation:** [Week 5 — Validation & the Beaming Function](docs/deep-dives/week-5-validation.md)
+
+**Next:** correct the beaming-function measurement and compare to analytic limb-darkening laws (Week 6).
 
 ---
 
@@ -158,18 +191,23 @@ mc-radiative-transfer/
 │   └── mcrt/                  # The simulation package
 │       ├── __init__.py
 │       ├── monte_carlo.py     # Photon + Simulation engine
-│       └── utils.py           # Sampling & geometry primitives
+│       ├── utils.py           # Sampling & geometry primitives
+│       ├── beaming.py         # Flux → specific-intensity extraction
+│       └── theory.py          # Eddington & Chandrasekhar H-function
 ├── scripts/                   # Runnable entry points
 │   ├── validate_engine.py     # Validation + beaming-function plot
+│   ├── convergence_study.py   # Photon-count parameter study
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
-│   └── test_physics.py        # Unit tests for the primitives
+│   ├── test_physics.py        # Unit tests for the primitives
+│   └── test_theory.py         # Unit tests for the H-function
 ├── docs/
 │   ├── deep-dives/            # Per-entry math deep dives
 │   │   ├── weeks-1-2-sampling-primitives.md
 │   │   ├── weeks-3-4-photon-transport.md
 │   │   ├── week-5-validation.md
+│   │   ├── week-6-beaming-function-correction.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -183,6 +221,7 @@ mc-radiative-transfer/
 ```bash
 pip install -e .              # makes `mcrt` importable everywhere
 python scripts/validate_engine.py   # validation + beaming-function plot
+python scripts/convergence_study.py # photon-count parameter study
 python scripts/plot_paths.py        # random-walk visualization
 pytest                              # run the unit tests
 ```
@@ -191,7 +230,8 @@ pytest                              # run the unit tests
 
 - [x] **Weeks 1-2**: Physics setup & environment (Thomson utilities, testing framework)
 - [x] **Weeks 3-4**: Monte Carlo engine (photon transport, boundary handling)
-- [x] **Week 5**: Validation & benchmarking (energy conservation, MFP, beaming function)
+- [x] **Week 5**: Validation & benchmarking (energy conservation, mean free path)
+- [x] **Week 6**: Beaming function corrected (flux→intensity) & validated vs. Eddington / Chandrasekhar H
 - [ ] **Weeks 6-7**: Beaming function extraction across τ_total values
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion

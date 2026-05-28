@@ -28,11 +28,15 @@ So the surface looks **darker at the limb** and **brighter face-on**. This is "l
 
 ![Beaming function](figures/08_beaming_function.png)
 
-`validate_engine.plot_beaming_function` does exactly this: bin all escape angles, overlay `1 + 1.5μ`, and check that the Monte Carlo result matches the analytical curve. **That match is the Week-5 validation gate.**
+`validate_engine.plot_beaming_function` bins all escape angles and overlays the theory curve.
+**Caveat (resolved in Week 6):** this first extraction histogrammed escape angles directly,
+which measures the emergent *flux*, not the specific *intensity* the Eddington law describes —
+so the comparison was off by a factor of μ. The corrected measurement and the comparison to the
+exact Chandrasekhar H-function are in the [Week 6 deep dive](week-6-beaming-function-correction.md).
 
-### The two supporting checks
+### The two checks that genuinely gate Week 5
 
-Alongside the beaming-function comparison, two bookkeeping checks confirm the engine is sound:
+Independent of the beaming-function subtlety, two bookkeeping checks confirm the engine is sound:
 
 - **Energy / photon conservation.** Every injected photon ends as *escaped* or *absorbed* — never lost or duplicated. The validator asserts `escaped + absorbed == injected` exactly.
 - **Mean free path.** Total path length ÷ total scatters ≈ **1.0** optical depth, confirming the `−ln(U)` step sampling from [Weeks 1–2](weeks-1-2-sampling-primitives.md) behaves correctly in the assembled engine.
@@ -57,5 +61,5 @@ That difference is the scientific output of the project. Everything in these dee
 | Energy conservation | `validate_energy_conservation` | escaped + absorbed = injected |
 | Mean free path | `validate_mean_free_path` | Σpath / Σscatters ≈ 1.0 |
 
-**Next:** extract beaming functions across a range of `tau_total` values (Weeks 6–7) — a new
-deep dive will accompany that progress-log entry.
+**Next:** [Week 6 — Beaming Function: Flux vs. Intensity](week-6-beaming-function-correction.md)
+corrects the measurement above and compares it to the analytic limb-darkening laws.
