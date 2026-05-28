@@ -1,5 +1,5 @@
 import numpy as np
-from utils import sample_step_size, sample_thomson_angle, rotate_vector, get_random_direction
+from .utils import sample_step_size, sample_thomson_angle, rotate_vector, get_random_direction
 
 class Photon:
     """

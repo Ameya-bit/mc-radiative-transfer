@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Editable install / venv
+*.egg-link
+.venv/
+venv/
+
+# Simulation outputs: ignore raw/bulk data, keep committed result plots
+data/*
+!data/.gitkeep
+!data/*.png
+
+# LaTeX build artifacts
+*.aux
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.toc
+
+# macOS
+.DS_Store

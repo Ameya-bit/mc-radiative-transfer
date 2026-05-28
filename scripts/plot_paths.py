@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from monte_carlo import Simulation
+from mcrt import Simulation
 
 def plot_random_walks(tau_total=5.0, num_photons=10):
     """Visualize 3D paths of a few photons."""
@@ -69,7 +69,7 @@ def plot_random_walks(tau_total=5.0, num_photons=10):
     ax.set_title(f'Photon Random Walks (tau_total={tau_total})')
     ax.invert_zaxis() # Tau=0 is top
     
-    output_path = 'figures/photon_paths.png'
+    output_path = 'data/photon_paths.png'
     plt.savefig(output_path)
     print(f"✓ Path visualization saved to {output_path}")
 

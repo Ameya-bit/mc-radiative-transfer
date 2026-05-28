@@ -1,12 +1,7 @@
-import sys
-import os
 import numpy as np
 import pytest
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
-from utils import sample_step_size, sample_thomson_angle, get_random_direction, rotate_vector
+from mcrt import sample_step_size, sample_thomson_angle, get_random_direction, rotate_vector
 
 def test_sample_step_size():
     """Verify that step sizes are positive and follow an exponential distribution roughly."""

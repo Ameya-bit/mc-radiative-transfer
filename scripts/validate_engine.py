@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from monte_carlo import Simulation
+from mcrt import Simulation
 
 def validate_energy_conservation(tau_total=1.0, num_photons=5000):
     """Verify that every photon is either escaped or absorbed."""
@@ -54,7 +54,7 @@ def plot_beaming_function(tau_total=10.0, num_photons=20000):
     plt.legend()
     plt.grid(True, alpha=0.3)
     
-    output_path = 'figures/beaming_function.png'
+    output_path = 'data/beaming_function.png'
     plt.savefig(output_path)
     print(f"✓ Beaming function plot saved to {output_path}")
 
