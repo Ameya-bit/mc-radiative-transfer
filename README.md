@@ -20,6 +20,50 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.6.0 — The beaming function as a function of optical depth
+*2026-06-01*
+
+**We now extract the beaming function across a range of atmosphere thicknesses τ, producing a
+reusable `I(μ; τ)` library — and that sweep exposed an unphysical limb-brightening at thin τ that
+traces back to how photons are injected.**
+
+Pulse-profile synthesis needs the beaming function not at one optical depth but across a range,
+because the amount of limb darkening is set by how much a photon scatters before escaping. The
+new sweep tabulates `I(μ)` for τ from 0.1 to 30 and saves it as a lookup table. The thick end
+behaves exactly as theory demands — the curves collapse onto the Chandrasekhar H-function and the
+slope settles at `b ≈ 1.75`. The thin end does **not**: at τ = 0.1–0.3 the fitted slope goes
+negative (the star appears *brighter* at its limb than face-on). The cause is the boundary
+source — the engine injects photons uniformly in μ, which is isotropic per *solid angle* but not
+isotropic in *intensity* — and at thin τ, where almost nothing scatters, that source shines
+straight through. Documented here as a baseline; the fix follows in v0.6.x.
+
+![Beaming-function library: I(μ) across optical depths τ](data/beaming_tau_curves.png)
+
+📐 **Full derivation:** [v0.6.0 — The Beaming-Function Library and a Thin-τ Anomaly](docs/deep-dives/v0.6.0-beaming-library.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **New code:** `scripts/tau_sweep.py` — sweeps `τ ∈ {0.1, 0.3, 1, 3, 10, 30}` at 200k photons
+  (fixed seed), reusing `mcrt.beaming`; saves `data/beaming_library.npz` (`tau_values`,
+  `mu_centers`, `intensity_by_tau`, `b_of_tau`) plus `beaming_tau_curves.png` /
+  `beaming_slope_vs_tau.png`.
+- **Library is a data product**, not new package code: a tabulated `I(μ; τ)` the pulse-profile
+  stage will interpolate, instead of re-running the Monte Carlo each time.
+- **Thick-τ validated:** for τ ≥ 3, RMS deviation from Chandrasekhar H is 0.03–0.08; τ = 10
+  reproduces the v0.5.1 curve. `b(τ)`: `[-0.88, -0.53, +0.53, +1.66, +1.69, +1.75]`.
+- **Known defect:** thin-τ limb brightening (`b < 0`). At τ = 0.1, ~84% of escapers never
+  scatter, so the emergent field is the injected source. Uniform-in-μ injection over-produces
+  grazing photons relative to an isotropic-intensity source (which emits `N(μ) ∝ μ`); the
+  flux→intensity `÷μ` step then turns flat counts into `I ∝ 1/μ`. Fix tracked for v0.6.1
+  (`costheta = sqrt(U)`).
+</details>
+
+**Next:** make the source isotropic in intensity (`costheta = sqrt(U)`), regenerate the library,
+and confirm `b(τ)` rises cleanly 0 → 1.75 (v0.6.1).
+
+---
+
 ### v0.5.1 — The beaming function matches theory, after fixing flux vs. intensity
 *2026-05-28*
 
@@ -198,6 +242,7 @@ mc-radiative-transfer/
 ├── scripts/                   # Runnable entry points
 │   ├── validate_engine.py     # Validation + beaming-function plot
 │   ├── convergence_study.py   # Photon-count parameter study
+│   ├── tau_sweep.py           # τ sweep → I(μ; τ) beaming-function library
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
@@ -209,6 +254,7 @@ mc-radiative-transfer/
 │   │   ├── v0.2.0-photon-transport.md
 │   │   ├── v0.5.0-validation.md
 │   │   ├── v0.5.1-beaming-correction.md
+│   │   ├── v0.6.0-beaming-library.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -235,7 +281,7 @@ pytest                              # run the unit tests
 - [x] **Weeks 3-4 — v0.2.0**: Monte Carlo engine (photon transport, boundary handling)
 - [x] **Week 5 — v0.5.0**: Validation & benchmarking (energy conservation, mean free path)
 - [x] **Patch — v0.5.1**: Beaming function corrected (flux→intensity), validated vs. Eddington / Chandrasekhar H
-- [ ] **Weeks 6-7**: Beaming function extraction across τ_total values
+- [~] **Weeks 6-7 — v0.6.0**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (fix in v0.6.x)
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
 
