@@ -20,6 +20,44 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.6.1 — Isotropic-intensity injection fixes the thin-τ beaming
+*2026-06-01*
+
+**Switching the source to emit an isotropic *intensity* (one line) removes the unphysical thin-τ
+limb brightening — the limb-darkening slope now rises cleanly from near-isotropic to the
+Chandrasekhar regime as the atmosphere thickens.**
+
+v0.6.0 traced the thin-τ defect to the boundary source: photons were injected uniformly in μ,
+which is isotropic per solid angle but not in specific intensity. A surface of constant brightness
+emits *more* photons straight out than grazing — its photon number per μ goes as `N(μ) ∝ μ` — so
+the correct sampling is `costheta = sqrt(U)`, not `uniform(0,1)`. With that change the regenerated
+library is physically sound across all τ: `b(τ)` rises monotonically from ~0.3 (thin, near
+isotropic) through Eddington (`b = 1.5`) near τ ≈ 1 to ~1.7–1.8 (thick), with no negative values.
+The thick end is unchanged — τ = 10 still gives `b ≈ 1.79`, matching v0.5.1 — because heavy
+scattering erases the injection direction.
+
+![Limb-darkening slope b vs. optical depth τ, after the injection fix](data/beaming_slope_vs_tau.png)
+
+📐 **Full derivation:** [v0.6.1 — Fixing the Source: Isotropic Intensity Injection](docs/deep-dives/v0.6.1-isotropic-injection.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **The fix:** `src/mcrt/monte_carlo.py` injection `costheta = np.sqrt(np.random.uniform(0,1))`
+  (was `np.random.uniform(0,1)`). Samples `f(μ) ∝ μ`, the isotropic-intensity boundary law.
+- **`b(τ)` before → after:** `[-0.88,-0.53,0.53,1.66,1.69,1.75]` → `[0.29,0.73,1.44,1.69,1.79,1.67]`.
+- **Thick end preserved:** τ = 10 ≈ 1.79 (matches validated v0.5.1); 9/9 unit tests pass.
+- **Caveats:** τ = 0.1 gives `b ≈ 0.29` (not exactly 0 — a thin atmosphere still scatters a
+  little); τ = 30 dips to 1.67 from low-μ tail noise (~8.5k escapers), to be sized by the
+  convergence study.
+- Library regenerated: `data/beaming_library.npz`, `beaming_tau_curves.png`, `beaming_slope_vs_tau.png`.
+</details>
+
+**Next:** the proper convergence study (error vs N, find the knee per observable), then
+pulse-profile synthesis.
+
+---
+
 ### v0.6.0 — The beaming function as a function of optical depth
 *2026-06-01*
 
@@ -255,6 +293,7 @@ mc-radiative-transfer/
 │   │   ├── v0.5.0-validation.md
 │   │   ├── v0.5.1-beaming-correction.md
 │   │   ├── v0.6.0-beaming-library.md
+│   │   ├── v0.6.1-isotropic-injection.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -281,7 +320,7 @@ pytest                              # run the unit tests
 - [x] **Weeks 3-4 — v0.2.0**: Monte Carlo engine (photon transport, boundary handling)
 - [x] **Week 5 — v0.5.0**: Validation & benchmarking (energy conservation, mean free path)
 - [x] **Patch — v0.5.1**: Beaming function corrected (flux→intensity), validated vs. Eddington / Chandrasekhar H
-- [~] **Weeks 6-7 — v0.6.0**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (fix in v0.6.x)
+- [x] **Weeks 6-7 — v0.6.0 / v0.6.1**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (v0.6.0) and fixed via isotropic-intensity injection (v0.6.1)
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
 
