@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.6.1 — Isotropic-intensity injection fixes the thin-τ beaming
-*2026-06-01*
+*2026-06-01 · commits `f82a192`, `63bfac0`*
 
 **Switching the source to emit an isotropic *intensity* (one line) removes the unphysical thin-τ
 limb brightening — the limb-darkening slope now rises cleanly from near-isotropic to the
@@ -59,7 +59,7 @@ pulse-profile synthesis.
 ---
 
 ### v0.6.0 — The beaming function as a function of optical depth
-*2026-06-01*
+*2026-06-01 · commits `3f8e4a5`, `a3da846`*
 
 **We now extract the beaming function across a range of atmosphere thicknesses τ, producing a
 reusable `I(μ; τ)` library — and that sweep exposed an unphysical limb-brightening at thin τ that
@@ -103,7 +103,7 @@ and confirm `b(τ)` rises cleanly 0 → 1.75 (v0.6.1).
 ---
 
 ### v0.5.1 — The beaming function matches theory, after fixing flux vs. intensity
-*2026-05-28*
+*2026-05-28 · commit `f458a20`*
 
 **A reviewer flagged that our beaming curve didn't follow theory. The cause was measuring the
 wrong quantity — once corrected, it tracks the classical limb-darkening laws.**
