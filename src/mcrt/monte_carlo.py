@@ -51,12 +51,14 @@ class Simulation:
     def run(self):
         """Run the simulation for all photons."""
         for _ in range(self.num_photons):
-            # Inject photon at the bottom boundary (tau = tau_total)
-            # Initial direction is upward but sampled isotropically over the hemisphere?
-            # The proposal says "photons returning downward are lost to thermal source".
-            # For injection, let's sample from an isotropic hemispherical distribution.
+            # Inject photon at the bottom boundary (tau = tau_total), moving upward.
+            # The thermal source is isotropic in *specific intensity*, so the photon
+            # number crossing the boundary per unit mu goes as N(mu) ∝ mu (the cos θ
+            # projection). Sampling costheta = sqrt(U) reproduces that ∝ mu law;
+            # uniform(0,1) would instead over-produce grazing photons (isotropic in
+            # solid angle, not in intensity) — see docs/deep-dives/v0.6.1.
             phi = np.random.uniform(0, 2 * np.pi)
-            costheta = np.random.uniform(0, 1) # 0 to 1 is upward (-z in our tau coords)
+            costheta = np.sqrt(np.random.uniform(0, 1))  # 0 to 1 is upward (-z in tau coords)
             sintheta = np.sqrt(1 - costheta**2)
             
             # Note: In our coordinate system, tau decreases upwards.
