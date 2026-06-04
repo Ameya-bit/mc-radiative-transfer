@@ -8,8 +8,13 @@ from mcrt import (
     fit_limb_darkening_slope,
 )
 
+# Photon counts are justified by the v0.7.0 convergence study (error vs N):
+# energy conservation is exact at any N; the mean free path reaches ~0.5% spread
+# by ~5k; the beaming-function bulk shape is good to ~1% by ~2e5. See
+# docs/deep-dives/v0.7.0-convergence-study.md.
+
 def validate_energy_conservation(tau_total=1.0, num_photons=5000):
-    """Verify that every photon is either escaped or absorbed."""
+    """Verify that every photon is either escaped or absorbed (exact at any N)."""
     sim = Simulation(tau_total=tau_total, num_photons=num_photons)
     sim.run()
     
@@ -17,8 +22,11 @@ def validate_energy_conservation(tau_total=1.0, num_photons=5000):
     assert total_tracked == num_photons, f"Energy conservation failed: {total_tracked} tracked vs {num_photons} injected"
     print(f"✓ Energy Conservation: {total_tracked}/{num_photons} photons accounted for.")
 
-def validate_mean_free_path(tau_total=10.0, num_photons=1000):
-    """Verify that the average path length between scatterings is ~1.0 in tau units."""
+def validate_mean_free_path(tau_total=10.0, num_photons=5000):
+    """Verify that the average path length between scatterings is ~1.0 in tau units.
+
+    N = 5000 gives ~0.5% seed-to-seed spread (the old 1000 gave ~1.6%); see v0.7.0.
+    """
     sim = Simulation(tau_total=tau_total, num_photons=num_photons)
     sim.run()
     
