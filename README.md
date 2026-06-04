@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.7.0 — How many photons is enough? The convergence study
-*2026-06-03 · commits `pending`*
+*2026-06-03 · commits `612102e`, `1821acb`*
 
 **The by-feel photon counts (5000 / 1000 / 200000) are now backed by an error-vs-N study:
 every observable's Monte Carlo noise falls as the textbook 1/√N, and we can read off how
@@ -65,7 +65,7 @@ project's natural opening for variance reduction.
 ---
 
 ### v0.6.2 — Reproducible runs: the engine takes an explicit random generator
-*2026-06-03 · commits `pending`*
+*2026-06-03 · commits `9d65dd8`, `1f80f25`*
 
 **Every simulation can now be reproduced exactly and seeded independently — the engine accepts
 an explicit random generator instead of drawing from global state. This is the quiet piece of
