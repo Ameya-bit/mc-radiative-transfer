@@ -20,6 +20,50 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.7.0 — How many photons is enough? The convergence study
+*2026-06-03 · commits `pending`*
+
+**The by-feel photon counts (5000 / 1000 / 200000) are now backed by an error-vs-N study:
+every observable's Monte Carlo noise falls as the textbook 1/√N, and we can read off how
+many photons each measurement actually needs.**
+
+To answer the reviewer's natural question — *"why 5000 and not 500?"* — we leaned on the
+reproducible seeding from v0.6.2 and swept the photon count across three decades at five
+independent seeds each, estimating each observable's error as its spread across seeds. Energy
+conservation is exact at any N; the mean free path needs only ~4.5k photons for 0.5%; the
+beaming-function bulk shape is good to ~2% by ~2×10⁵. The binding case is the **low-μ tail** of
+the beaming function — at 10⁶ photons it still carries ~2.8% noise and would need ~1.5×10⁶
+(extrapolated) to reach 2%, the same grazing-angle corner that makes τ = 30 noisy. This is the
+project's natural opening for variance reduction.
+
+![Error vs N: every observable rides the 1/√N line; the low-μ tail converges slowest](data/convergence_error_vs_n.png)
+
+📐 **Full derivation:** [v0.7.0 — How Many Photons Is Enough? The Convergence Study](docs/deep-dives/v0.7.0-convergence-study.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **Built on v0.6.2 seeding:** the study draws independent, reproducible streams via
+  `SeedSequence(base).spawn(...)` — one per `(N, seed)` run — so the across-seed spread it
+  measures is real statistical noise.
+- **New module** `src/mcrt/convergence.py` (pure, unit-tested): `statistical_error`, `loglog_slope`,
+  `find_knee` (persistent-floor knee), `n_for_target_error` (production N on the fitted −1/2 line).
+- **Study** `scripts/convergence_study.py`: sweeps `N ∈ {1e3…1e6}` × 5 seeds at τ = 10, saves
+  `data/convergence_slope.png`, `data/convergence_error_vs_n.png` and raw arrays
+  `data/convergence_results.npz`; `--quick` / `--summarize-only` modes for fast iteration.
+- **Findings:** fitted log-log slopes −0.58 (mfp), −0.57 (b), −0.55 (bulk bin), −0.45 (tail bin);
+  no persistent knee in range → statistics-limited throughout; `b → 1.75 ± 0.08` at 1e6 (matches
+  validated v0.5.1/v0.6.1); energy residual exactly 0 at all N.
+- **Vectorization decision:** deferred — the scalar engine is fast enough (~10 min / 7.2M-photon
+  sweep) and this study is precisely the seeded, converged reference a vectorized engine would have
+  to match. Cost/triggers recorded in the deep dive §4.
+- **Tests:** 23/23 pass (12 new convergence-helper tests; the 2 reproducibility tests landed in v0.6.2).
+</details>
+
+**Next:** pulse-profile synthesis (rotating NS + hot spot) consuming `data/beaming_library.npz`.
+
+---
+
 ### v0.6.2 — Reproducible runs: the engine takes an explicit random generator
 *2026-06-03 · commits `pending`*
 
@@ -313,15 +357,17 @@ mc-radiative-transfer/
 │       ├── monte_carlo.py     # Photon + Simulation engine (optional rng for reproducibility)
 │       ├── utils.py           # Sampling & geometry primitives
 │       ├── beaming.py         # Flux → specific-intensity extraction
+│       ├── convergence.py     # Error-vs-N helpers (knee, target-N) for the convergence study
 │       └── theory.py          # Eddington & Chandrasekhar H-function
 ├── scripts/                   # Runnable entry points
 │   ├── validate_engine.py     # Validation + beaming-function plot
-│   ├── convergence_study.py   # Photon-count parameter study
+│   ├── convergence_study.py   # Photon-count convergence study (error vs N, recommended N)
 │   ├── tau_sweep.py           # τ sweep → I(μ; τ) beaming-function library
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
 │   ├── test_physics.py        # Unit tests for the primitives + reproducible seeding
+│   ├── test_convergence.py    # Unit tests for the convergence helpers
 │   └── test_theory.py         # Unit tests for the H-function
 ├── docs/
 │   ├── deep-dives/            # Per-version math deep dives
@@ -332,6 +378,7 @@ mc-radiative-transfer/
 │   │   ├── v0.6.0-beaming-library.md
 │   │   ├── v0.6.1-isotropic-injection.md
 │   │   ├── v0.6.2-reproducible-seeding.md
+│   │   ├── v0.7.0-convergence-study.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -345,7 +392,7 @@ mc-radiative-transfer/
 ```bash
 pip install -e .              # makes `mcrt` importable everywhere
 python scripts/validate_engine.py   # validation + beaming-function plot
-python scripts/convergence_study.py # photon-count parameter study
+python scripts/convergence_study.py # photon-count convergence study (error vs N)
 python scripts/plot_paths.py        # random-walk visualization
 pytest                              # run the unit tests
 ```
@@ -360,6 +407,7 @@ pytest                              # run the unit tests
 - [x] **Patch — v0.5.1**: Beaming function corrected (flux→intensity), validated vs. Eddington / Chandrasekhar H
 - [x] **Weeks 6-7 — v0.6.0 / v0.6.1**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (v0.6.0) and fixed via isotropic-intensity injection (v0.6.1)
 - [x] **Patch — v0.6.2**: Reproducible seeding — explicit `numpy.random.Generator` threaded through the engine; the prerequisite for measurable error bars
+- [x] **Patch — v0.7.0**: Convergence study (error vs N) — defensible photon counts replace the by-feel values; vectorization assessed and deferred
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
 
