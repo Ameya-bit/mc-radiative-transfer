@@ -20,6 +20,43 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.6.2 — Reproducible runs: the engine takes an explicit random generator
+*2026-06-03 · commits `pending`*
+
+**Every simulation can now be reproduced exactly and seeded independently — the engine accepts
+an explicit random generator instead of drawing from global state. This is the quiet piece of
+plumbing that makes a real error-vs-N study (v0.7.0) possible.**
+
+A Monte Carlo result is only as trustworthy as its error bar, and you cannot measure that error
+bar without repeating a run under independent, controlled randomness. Until now the engine drew
+from NumPy's global `np.random`, so two runs could never be made identical and independent seed
+streams could not be guaranteed. `Simulation` now takes an optional `rng` (a
+`numpy.random.Generator`) threaded through every sampler; the same seed reproduces a run
+bit-for-bit, and `SeedSequence.spawn` hands out provably-independent streams for multi-seed
+studies. The default path is unchanged, so nothing downstream had to move.
+
+📐 **Full derivation:** [v0.6.2 — Reproducible Seeding: An Explicit Generator](docs/deep-dives/v0.6.2-reproducible-seeding.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **Engine:** `Simulation(rng=...)` and `Photon.scatter(..., rng=...)` thread an explicit
+  `numpy.random.Generator` through injection, step sampling, and scattering.
+- **Samplers:** `sample_step_size`, `sample_thomson_angle`, `get_random_direction`, `rotate_vector`
+  all accept an optional `rng`; when it is `None` they fall back to the global `np.random`, so
+  existing call sites and unit tests are byte-for-byte unchanged.
+- **Independent streams:** `np.random.SeedSequence(base).spawn(k)` yields k guaranteed-independent
+  child generators — the mechanism the convergence study uses for its per-`(N, seed)` runs.
+- **Adopted by** `scripts/tau_sweep.py`: the library build now runs on
+  `Simulation(rng=default_rng(SEED))` instead of seeding the global module.
+- **Tests:** 11/11 pass (2 new reproducibility tests — same seed → identical escape angles,
+  different seed → different realization — on top of the 9 primitive/theory tests).
+</details>
+
+**Next:** spend this reproducibility on sizing the photon counts — the error-vs-N convergence study (v0.7.0).
+
+---
+
 ### v0.6.1 — Isotropic-intensity injection fixes the thin-τ beaming
 *2026-06-01 · commits `f82a192`, `63bfac0`*
 
@@ -273,7 +310,7 @@ mc-radiative-transfer/
 ├── src/
 │   └── mcrt/                  # The simulation package
 │       ├── __init__.py
-│       ├── monte_carlo.py     # Photon + Simulation engine
+│       ├── monte_carlo.py     # Photon + Simulation engine (optional rng for reproducibility)
 │       ├── utils.py           # Sampling & geometry primitives
 │       ├── beaming.py         # Flux → specific-intensity extraction
 │       └── theory.py          # Eddington & Chandrasekhar H-function
@@ -284,7 +321,7 @@ mc-radiative-transfer/
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
-│   ├── test_physics.py        # Unit tests for the primitives
+│   ├── test_physics.py        # Unit tests for the primitives + reproducible seeding
 │   └── test_theory.py         # Unit tests for the H-function
 ├── docs/
 │   ├── deep-dives/            # Per-version math deep dives
@@ -294,6 +331,7 @@ mc-radiative-transfer/
 │   │   ├── v0.5.1-beaming-correction.md
 │   │   ├── v0.6.0-beaming-library.md
 │   │   ├── v0.6.1-isotropic-injection.md
+│   │   ├── v0.6.2-reproducible-seeding.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -321,6 +359,7 @@ pytest                              # run the unit tests
 - [x] **Week 5 — v0.5.0**: Validation & benchmarking (energy conservation, mean free path)
 - [x] **Patch — v0.5.1**: Beaming function corrected (flux→intensity), validated vs. Eddington / Chandrasekhar H
 - [x] **Weeks 6-7 — v0.6.0 / v0.6.1**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (v0.6.0) and fixed via isotropic-intensity injection (v0.6.1)
+- [x] **Patch — v0.6.2**: Reproducible seeding — explicit `numpy.random.Generator` threaded through the engine; the prerequisite for measurable error bars
 - [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
 - [ ] **Phase 4**: Analysis & paper completion
 
