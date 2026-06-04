@@ -28,18 +28,22 @@ class Photon:
         self.pos += self.dir * step_size
         self.total_path_length += step_size
 
-    def scatter(self, cos_theta):
+    def scatter(self, cos_theta, rng=None):
         """Update direction based on scattering angle."""
-        self.dir = rotate_vector(self.dir, cos_theta)
+        self.dir = rotate_vector(self.dir, cos_theta, rng=rng)
         self.num_scatterings += 1
 
 class Simulation:
     """
     Manages the Monte Carlo simulation of many photons.
     """
-    def __init__(self, tau_total, num_photons=1000):
+    def __init__(self, tau_total, num_photons=1000, rng=None):
         self.tau_total = tau_total
         self.num_photons = num_photons
+        # An explicit Generator makes a run reproducible; convergence studies
+        # pass per-run seed offsets. Default to a fresh Generator so each
+        # Simulation is independent without touching global np.random state.
+        self.rng = rng if rng is not None else np.random.default_rng()
         self.photons = []
         self.results = {
             'escaped_mu': [],
@@ -57,8 +61,8 @@ class Simulation:
             # projection). Sampling costheta = sqrt(U) reproduces that ∝ mu law;
             # uniform(0,1) would instead over-produce grazing photons (isotropic in
             # solid angle, not in intensity) — see docs/deep-dives/v0.6.1.
-            phi = np.random.uniform(0, 2 * np.pi)
-            costheta = np.sqrt(np.random.uniform(0, 1))  # 0 to 1 is upward (-z in tau coords)
+            phi = self.rng.uniform(0, 2 * np.pi)
+            costheta = np.sqrt(self.rng.uniform(0, 1))  # 0 to 1 is upward (-z in tau coords)
             sintheta = np.sqrt(1 - costheta**2)
             
             # Note: In our coordinate system, tau decreases upwards.
@@ -73,7 +77,7 @@ class Simulation:
             
             while p.alive:
                 # 1. Sample step size
-                d_tau = sample_step_size()
+                d_tau = sample_step_size(rng=self.rng)
                 
                 # 2. Propagate
                 p.propagate(d_tau)
@@ -98,8 +102,8 @@ class Simulation:
                 
                 else:
                     # 4. Scatter
-                    mu_scatter = sample_thomson_angle()
-                    p.scatter(mu_scatter)
+                    mu_scatter = sample_thomson_angle(rng=self.rng)
+                    p.scatter(mu_scatter, rng=self.rng)
             
             self.photons.append(p)
 

@@ -1,69 +1,90 @@
+"""Utility functions and constants for Monte Carlo Radiative Transfer.
+
+(Using optical depth coordinates, so many constants are normalized to 1.)
+"""
+
 import numpy as np
 
-"""
-Utility functions and constants for Monte Carlo Radiative Transfer.
-"""
+# All samplers accept an optional `rng` (a numpy.random.Generator). When it is
+# None they fall back to the legacy global `np.random` module, so direct callers
+# (and the existing unit tests) keep their original behaviour; the Simulation
+# threads an explicit Generator through for reproducible, independent runs.
 
-# Physical Constants
-# (Using optical depth coordinates, so many constants are normalized to 1)
-
-def sample_step_size():
+def sample_step_size(rng=None):
     """
     Sample a step size delta_tau from the distribution P(tau) = exp(-tau).
     This corresponds to the distance a photon travels before scattering.
-    
+
+    Args:
+        rng: Optional numpy.random.Generator. Defaults to global np.random.
+
     Returns:
         float: The sampled optical depth step size.
     """
-    return -np.log(np.random.random())
+    if rng is None:
+        rng = np.random
+    return -np.log(rng.random())
 
-def sample_thomson_angle():
+def sample_thomson_angle(rng=None):
     """
     Sample the scattering angle theta from the Thomson phase function:
     P(mu) = (3/4) * (1 + mu^2), where mu = cos(theta).
-    
+
     We use rejection sampling for simplicity and clarity.
-    
+
+    Args:
+        rng: Optional numpy.random.Generator. Defaults to global np.random.
+
     Returns:
         float: The sampled cosine of the scattering angle (mu).
     """
+    if rng is None:
+        rng = np.random
     while True:
-        mu = np.random.uniform(-1, 1)
+        mu = rng.uniform(-1, 1)
         p_mu = 0.75 * (1 + mu**2)
-        if np.random.random() < p_mu / 1.5:  # max(p_mu) = 1.5
+        if rng.random() < p_mu / 1.5:  # max(p_mu) = 1.5
             return mu
 
-def get_random_direction():
+def get_random_direction(rng=None):
     """
     Generate a random unit vector in 3D (isotropic distribution).
-    
+
+    Args:
+        rng: Optional numpy.random.Generator. Defaults to global np.random.
+
     Returns:
         np.array: A 3D unit vector [dx, dy, dz].
     """
-    phi = np.random.uniform(0, 2 * np.pi)
-    costheta = np.random.uniform(-1, 1)
+    if rng is None:
+        rng = np.random
+    phi = rng.uniform(0, 2 * np.pi)
+    costheta = rng.uniform(-1, 1)
     sintheta = np.sqrt(1 - costheta**2)
-    
+
     dx = sintheta * np.cos(phi)
     dy = sintheta * np.sin(phi)
     dz = costheta
-    
+
     return np.array([dx, dy, dz])
 
-def rotate_vector(vector, costheta_scatter):
+def rotate_vector(vector, costheta_scatter, rng=None):
     """
     Rotate a direction vector by a scattering angle theta.
     The azimuthal angle of scattering is assumed to be uniform [0, 2pi].
-    
+
     Args:
         vector (np.array): Current direction unit vector.
         costheta_scatter (float): Cosine of the scattering angle.
-        
+        rng: Optional numpy.random.Generator. Defaults to global np.random.
+
     Returns:
         np.array: The new direction unit vector.
     """
+    if rng is None:
+        rng = np.random
     # Sample azimuthal angle
-    phi = np.random.uniform(0, 2 * np.pi)
+    phi = rng.uniform(0, 2 * np.pi)
     sintheta_scatter = np.sqrt(1 - costheta_scatter**2)
     
     # If the vector is nearly vertical, handle it specially to avoid division by zero

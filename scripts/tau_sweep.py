@@ -27,8 +27,9 @@ from mcrt import (
     fit_limb_darkening_slope,
 )
 
-# Fixed seed so the library is reproducible when re-checked. (The per-run seed
-# offsets needed by the convergence study are a separate, later change.)
+# Fixed seed so the library is reproducible when re-checked. Threaded through the
+# engine as an explicit Generator (the per-run seed offsets the convergence study
+# needs are built on the same Simulation(rng=...) hook).
 SEED = 20260601
 
 TAU_VALUES = [0.1, 0.3, 1.0, 3.0, 10.0, 30.0]
@@ -49,14 +50,14 @@ def build_library(tau_values=TAU_VALUES, num_photons=NUM_PHOTONS, n_bins=N_BINS)
         - intensity_by_tau: float64[n_tau, n_bins], I(μ) normalized to 1 at μ≈1
         - b_of_tau:         float64[n_tau], fitted limb-darkening slope per τ
     """
-    np.random.seed(SEED)
+    rng = np.random.default_rng(SEED)
 
     mu_centers = None
     intensity_by_tau = []
     b_of_tau = []
 
     for tau in tau_values:
-        sim = Simulation(tau_total=tau, num_photons=num_photons)
+        sim = Simulation(tau_total=tau, num_photons=num_photons, rng=rng)
         sim.run()
 
         centers, intensity = extract_intensity(sim.results['escaped_mu'], n_bins=n_bins)
