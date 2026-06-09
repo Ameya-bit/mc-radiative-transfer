@@ -20,6 +20,54 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.8.0 — A spinning hot spot becomes a pulse profile
+*2026-06-08 · commit `<pending>`*
+
+**The beaming function now drives an actual observable: brightness vs. rotation phase for a hot
+spot on a spinning neutron star. The geometry, gravitational light bending, and integration are
+verified bug-free against a closed form (Rung A) before any new physics is allowed to carry
+meaning.**
+
+A new deterministic module turns the three ingredients of a pulse profile — viewing geometry,
+Beloborodov light bending, and the surface beaming `I(μ)` — into the observed flux `F(φ)` and its
+**pulsed fraction**. The verification ladder starts here: with an *isotropic* spot the flux reduces
+to a closed form, so the numerical pipeline must reproduce it exactly. It does, to machine
+precision, for both an always-visible geometry and one where the spot sets behind the star yet is
+partly visible "around the back" via bending. The physics shows through cleanly: as compactness `u`
+grows, bending first lifts the spot out of eclipse and then **smooths** the pulse (PF 1.00 → 0.78 →
+0.60). No Monte Carlo is involved — this layer is pure geometry and relativity on top of the
+existing library.
+
+![Rung A: the numerical pipeline matches the closed-form isotropic profile to machine precision, and gravitational bending smooths the pulse](data/pulse_profile_rung_a.png)
+
+📐 **Full derivation:** [v0.8.0 — A Spinning Hot Spot Becomes a Pulse Profile](docs/deep-dives/v0.8.0-pulse-profile.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **New module** `src/mcrt/pulse.py` (pure, deterministic): `cos_psi` (viewing geometry),
+  `bend` (Beloborodov `cos α = u + (1−u)cos ψ`, constant Jacobian), `visibility_threshold`
+  (`cos ψ ≥ −u/(1−u)`, admits seeing around the back), `point_spot_flux` / `compute_profile`
+  (`F ∝ (1−u) I(cos α) cos α`), `pulsed_fraction`, and `analytic_isotropic_pf` (the Rung A closed
+  form, which refuses eclipsing geometry).
+- **Rung A:** the numerical profile matches `F ∝ (1−u)(u + (1−u)cos ψ)` and the closed-form PF to
+  machine precision (far inside the < 1 % target), verified against an *inline-derived* benchmark
+  sharing no code with the module, for two geometries including one with `ψ_max > 90°`.
+- **Design seam for Rung C:** `point_spot_flux(..., beaming=I_of_mu)` injects `I(μ)`; the default is
+  isotropic. A test locks in that constant beaming reproduces the isotropic flux bit-for-bit, so the
+  isotropic-vs-realistic comparison (v0.9.0) is a one-line swap with geometry held identical.
+- **Figure** `scripts/pulse_demo.py` → `data/pulse_profile_rung_a.png` (deterministic; no seed).
+- **Honest framing:** for an isotropic spot the flux *is* the closed form, so Rung A verifies the
+  geometry/bending/visibility/PF **plumbing** — the new physics (scattering beaming) enters at
+  Rung C, which is exactly why it needs this verified geometry beneath it.
+- **Tests:** 35/35 pass (12 new pulse tests on top of the existing 23).
+</details>
+
+**Next:** Rung B (best-effort) — reproduce a low-spin Bogdanov (2019, L26) code-comparison case
+(v0.8.1); then Rung C swaps in `I(μ; τ)` for the headline isotropic-vs-realistic ΔPF (v0.9.0).
+
+---
+
 ### v0.7.0 — How many photons is enough? The convergence study
 *2026-06-03 · commits `612102e`, `1821acb`*
 
@@ -358,16 +406,19 @@ mc-radiative-transfer/
 │       ├── utils.py           # Sampling & geometry primitives
 │       ├── beaming.py         # Flux → specific-intensity extraction
 │       ├── convergence.py     # Error-vs-N helpers (knee, target-N) for the convergence study
+│       ├── pulse.py           # Point-spot pulse profiles (geometry, bending, pulsed fraction)
 │       └── theory.py          # Eddington & Chandrasekhar H-function
 ├── scripts/                   # Runnable entry points
 │   ├── validate_engine.py     # Validation + beaming-function plot
 │   ├── convergence_study.py   # Photon-count convergence study (error vs N, recommended N)
 │   ├── tau_sweep.py           # τ sweep → I(μ; τ) beaming-function library
+│   ├── pulse_demo.py          # Pulse-profile demo + Rung A verification figure
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
 │   ├── test_physics.py        # Unit tests for the primitives + reproducible seeding
 │   ├── test_convergence.py    # Unit tests for the convergence helpers
+│   ├── test_pulse.py          # Unit tests for the pulse machinery + Rung A
 │   └── test_theory.py         # Unit tests for the H-function
 ├── docs/
 │   ├── deep-dives/            # Per-version math deep dives
@@ -379,6 +430,7 @@ mc-radiative-transfer/
 │   │   ├── v0.6.1-isotropic-injection.md
 │   │   ├── v0.6.2-reproducible-seeding.md
 │   │   ├── v0.7.0-convergence-study.md
+│   │   ├── v0.8.0-pulse-profile.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
@@ -393,6 +445,7 @@ mc-radiative-transfer/
 pip install -e .              # makes `mcrt` importable everywhere
 python scripts/validate_engine.py   # validation + beaming-function plot
 python scripts/convergence_study.py # photon-count convergence study (error vs N)
+python scripts/pulse_demo.py        # pulse-profile demo + Rung A verification figure
 python scripts/plot_paths.py        # random-walk visualization
 pytest                              # run the unit tests
 ```
@@ -408,7 +461,8 @@ pytest                              # run the unit tests
 - [x] **Weeks 6-7 — v0.6.0 / v0.6.1**: Beaming function extracted across τ_total values into a library; thin-τ injection defect found (v0.6.0) and fixed via isotropic-intensity injection (v0.6.1)
 - [x] **Patch — v0.6.2**: Reproducible seeding — explicit `numpy.random.Generator` threaded through the engine; the prerequisite for measurable error bars
 - [x] **Patch — v0.7.0**: Convergence study (error vs N) — defensible photon counts replace the by-feel values; vectorization assessed and deferred
-- [ ] **Weeks 8-9**: Pulse profile synthesis (apply to NICER geometry)
+- [x] **Weeks 8-9 — v0.8.0**: Pulse-profile machinery + Rung A (point spot, Beloborodov bending, verified vs. closed form to machine precision)
+- [ ] **Weeks 8-9 — v0.8.1 / v0.9.x**: Rung B (Bogdanov L26 code comparison, best-effort), Rung C (isotropic-vs-realistic ΔPF), Rung D (real-star anchor)
 - [ ] **Phase 4**: Analysis & paper completion
 
 ---
