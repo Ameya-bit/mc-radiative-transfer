@@ -7,6 +7,8 @@ isotropic point spot. The closed forms are derived inline here from the
 emission-angle extremes, so they share no code with the module under test.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -19,6 +21,12 @@ from mcrt.pulse import (
     pulsed_fraction,
     visibility_threshold,
 )
+
+# IM-code reference waveform from the L26 supplementary archive (apjlab5968.tar.gz).
+# That archive is third-party AAS material and is gitignored (data/*), so it is
+# present only after a local download+extract; the Rung B test skips cleanly
+# without it so the suite still passes on a fresh checkout. See docs/references.md.
+SD1A_REFERENCE = Path(__file__).resolve().parents[1] / "data" / "l26_reference" / "SD1a_test_IM.txt"
 
 # A geometry the spot never dips behind the star: cos ψ_min = cos(i+θ_s) stays
 # above the bending visibility threshold −u/(1−u). Verified in the test body.
@@ -144,3 +152,48 @@ def test_beaming_callable_modulates_flux_but_not_geometry():
     const = point_spot_flux(phase, g["inclination"], g["colatitude"], g["compactness"],
                             beaming=lambda mu: np.full_like(np.asarray(mu, float), 1.0))
     assert np.allclose(iso, const)
+
+
+# --- Rung B: SD1a vs. the NICER code-comparison (IM) reference -----------------
+
+# SD1a parameters (Bogdanov et al. 2019, ApJL 887 L26, Table 1): 1 Hz (no Doppler),
+# 0.01 rad spot (a point), isotropic Planck, i = θ_s = 90°, M = 1.4 M_sun, R = 12 km.
+SD1A_COMPACTNESS = 2.0 * 1.47662 * 1.4 / 12.0   # u = 2GM/Rc² ≈ 0.3445
+SD1A_INCLINATION = np.deg2rad(90.0)
+SD1A_COLATITUDE = np.deg2rad(90.0)
+
+# Beloborodov's linear bending map is ~1% accurate for this compactness, so we hold
+# the agreement to 1.2% (the observed worst case is 0.8%, at the grazing eclipse edge).
+RUNG_B_TOLERANCE = 0.012
+
+
+@pytest.mark.skipif(not SD1A_REFERENCE.exists(),
+                    reason="L26 supplementary reference (data/l26_reference/SD1a_test_IM.txt) not present")
+def test_rung_b_sd1a_matches_im_reference_within_beloborodov_accuracy():
+    """Our SD1a profile reproduces the IM community-reference waveform to ~1%.
+
+    The reference (column 1 phase in cycles, column 2 photon flux at 1 keV) and our
+    point-spot flux both peak at phase 0 (spot facing the observer). Each is
+    normalized to its own peak — ours is in arbitrary units, theirs an absolute
+    photon flux, and at 1 Hz + isotropic emission the *normalized shapes* must
+    coincide. The only expected deviation is the Beloborodov-approximation error,
+    largest where the emission grazes the limb (the eclipse edge).
+    """
+    ref = np.loadtxt(SD1A_REFERENCE)
+    phase_cycles, f_ref = ref[:, 0], ref[:, 1]
+
+    phi = 2.0 * np.pi * phase_cycles
+    f_ours = point_spot_flux(phi, SD1A_INCLINATION, SD1A_COLATITUDE, SD1A_COMPACTNESS)
+
+    ref_n = f_ref / f_ref.max()
+    ours_n = f_ours / f_ours.max()
+
+    # Shape agreement at the ~1% level across the whole rotation.
+    assert np.abs(ours_n - ref_n).max() < RUNG_B_TOLERANCE
+
+    # The bending-set eclipse window must land on the reference: same visible
+    # fraction (gravity lets the spot be seen partway around the back) and a true
+    # eclipse to zero (PF = 1) in both.
+    assert (ours_n > 0).mean() == pytest.approx((ref_n > 0).mean(), abs=0.02)
+    assert pulsed_fraction(f_ref) == pytest.approx(1.0)
+    assert pulsed_fraction(f_ours) == pytest.approx(1.0)

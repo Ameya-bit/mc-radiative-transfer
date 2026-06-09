@@ -1,0 +1,117 @@
+# References & Data Sources
+
+> The project's single bibliography. Deep dives and the README link **into** this
+> file by anchor (e.g. `[Beloborodov (2002)](../references.md#beloborodov-2002)`)
+> instead of repeating full citations. Add a source here once, cite it everywhere.
+>
+> Bibcodes for the pulse-profile / NICER references were checked against ADS/IOP
+> on 2026-06-09 (see `paper-physics-grounding.md §4`). When you add a source,
+> include a stable link (ADS bibcode or DOI) and note which version first used it.
+
+---
+
+## Monte Carlo radiative transfer (the engine)
+
+### Cashwell & Everett (1959)
+*A Practical Manual on the Monte Carlo Method for Random Walk Problems.* Pergamon.
+— The single-photon random-walk method our engine actually implements.
+*Used in:* v0.1.0–v0.2.0 (transport), and the paper's methods framing.
+
+### Whitney (2011)
+*Monte Carlo radiative transfer.* Bulletin of the Astronomical Society of India, 39, 101.
+[ADS: 2011BASI...39..101W](https://ui.adsabs.harvard.edu/abs/2011BASI...39..101W) —
+modern review of the method; the correct citation in place of "Lucy 1999 photon
+packets" (we do single-photon transport, not Lucy packet splitting).
+*Used in:* v0.2.0 onward (method), paper methods.
+
+---
+
+## Classical radiative transfer & limb darkening (the validation targets)
+
+### Chandrasekhar (1960)
+*Radiative Transfer.* Dover. — The H-function for a semi-infinite scattering
+atmosphere; the exact limb-darkening law our beaming function is validated
+against. (Caveat: scalar/isotropic H vs. Rayleigh H; semi-infinite H vs. the
+finite-slab X/Y functions — see `paper-physics-grounding.md §3`.)
+*Used in:* v0.5.1, v0.6.0–v0.6.1 (`src/mcrt/theory.py`, beaming validation).
+
+### Eddington limb darkening
+The classical `I(μ) ∝ 1 + 1.5 μ` two-stream result (textbook; see Chandrasekhar
+1960 / Mihalas 1978). The linear approximation our fitted slope `b` is compared to.
+*Used in:* v0.5.1 onward (`eddington_limb_darkening`).
+
+---
+
+## Pulse profiles & gravitational light bending (the pulse module)
+
+### Beloborodov (2002)
+ApJ, 566, L85. [DOI: 10.1086/339511](https://doi.org/10.1086/339511) ·
+[ADS: 2002ApJ...566L..85B](https://ui.adsabs.harvard.edu/abs/2002ApJ...566L..85B)
+— The linear light-bending approximation `cos α = u + (1 − u) cos ψ` with constant
+Jacobian `(1 − u)`; accurate to ~1% for `u ≲ 0.5`. The Rung A closed form and the
+core of `bend()`.
+*Used in:* v0.8.0 (`bend`, `analytic_isotropic_pf`), v0.8.1 (Rung B).
+
+### Poutanen & Beloborodov (2006)
+MNRAS, 373, 836. [DOI: 10.1111/j.1365-2966.2006.11088.x](https://doi.org/10.1111/j.1365-2966.2006.11088.x) ·
+[ADS: 2006MNRAS.373..836P](https://ui.adsabs.harvard.edu/abs/2006MNRAS.373..836P)
+— The bolometric point-spot flux `F ∝ (1 − u) I(cos α) cos α` (slow-rotation form).
+*Used in:* v0.8.0 (`point_spot_flux`).
+
+---
+
+## NICER pulse-profile modeling & code comparison (the benchmarks)
+
+### Bogdanov et al. (2019) — "Paper II", L26
+ApJL, 887, L26. [DOI: 10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968) ·
+[ADS: 2019ApJ...887L..26B](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..26B)
+— The pulse-profile **code-comparison** suite (test problems SD1/SD2/OS1). The
+Illinois–Maryland (IM) reference waveforms are our **Rung B** benchmark; codes
+agree to ≲ 0.1%. **Note:** this is Paper *II* (L26), not Paper I (L25, the data set).
+The reference data is a separate, gitignored download — see
+[Reference data sets](#reference-data-sets) below.
+*Used in:* v0.8.1 (Rung B, test SD1a).
+
+### Riley et al. (2019) — J0030, L21
+ApJL, 887, L21. [DOI: 10.3847/2041-8213/ab481c](https://doi.org/10.3847/2041-8213/ab481c) ·
+[ADS: 2019ApJ...887L..21R](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..21R)
+— Amsterdam (X-PSI) M–R and spot geometry for PSR J0030+0451.
+*Will be used in:* v0.9.1 (Rung D real-star anchor).
+
+### Miller et al. (2019) — J0030, L24
+ApJL, 887, L24. [DOI: 10.3847/2041-8213/ab50c5](https://doi.org/10.3847/2041-8213/ab50c5) ·
+[ADS: 2019ApJ...887L..24M](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..24M)
+— Illinois–Maryland M–R for PSR J0030+0451 and quoted uncertainties.
+*Will be used in:* v0.9.1 (Rung D).
+
+---
+
+## Deferred / future-work citations (not used yet)
+
+- **Ho & Lai (2001)**, MNRAS, 327, 1081 — magnetic atmospheres. The draft's
+  "magnetic anisotropy" framing; deferred (the engine is Thomson-only).
+- **Morsink et al. (2007)**, ApJ, 663, 1244 — oblate-Schwarzschild; only if a
+  reviewer raises oblateness (explicitly out of scope, see `to_finish.md §7`).
+- **Psaltis & Özel (2014)**, ApJ, 792, 87 — special-relativistic / oblateness
+  corrections; same out-of-scope note.
+
+---
+
+## Reference data sets
+
+### L26 code-comparison waveforms (Rung B benchmark)
+- **What:** ASCII reference pulse profiles from the IM code for the SD1/SD2/OS1
+  test problems, distributed as the supplementary archive `apjlab5968.tar.gz`
+  attached to [Bogdanov et al. (2019)](#bogdanov-et-al-2019--paper-ii-l26) on
+  IOPscience. We use `SD1a_test_IM.txt` (phase in cycles; photon flux at 1 keV).
+- **How to get it:** download the "Supplementary data" archive from the article
+  page ([10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968)) and
+  extract it to `data/l26_reference/`. Then `python scripts/rung_b_compare.py`
+  and the Rung B test (`tests/test_pulse.py`) pick it up automatically.
+- **Why it is not committed:** the archive is third-party AAS material. AAS holds
+  copyright on pre-2021-10-11 articles (L26 is 2019) unless gold-OA, and the
+  archive's ReadMe grants *use* ("to facilitate testing of other independently
+  developed codes") but not redistribution. So `data/` is gitignored for
+  non-figure files and the data stays a local download; the test skips cleanly
+  when it is absent. (AAS licensing policy:
+  [journals.aas.org/article-charges-and-copyright](https://journals.aas.org/article-charges-and-copyright/).)

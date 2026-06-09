@@ -20,8 +20,57 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.8.1 — Rung B: our waveform matches the NICER code comparison
+*2026-06-09 · commit `<pending>`*
+
+**The pulse-profile machinery now reproduces a published NICER code-comparison
+waveform to ~1% — independent confirmation that our geometry and light bending
+agree with the exact ray-tracing codes the field uses, not just with our own
+closed form.**
+
+Rung A checked the pipeline against a formula we derived ourselves; Rung B checks
+it against someone else's *exact* code. We run the existing point-spot model at
+the Bogdanov et al. (2019, "Paper II" / L26) **Test SD1a** geometry — a 1 Hz
+(effectively non-rotating), isotropic, point-like spot, the one case in their
+suite that needs no physics we defer — and compare to the Illinois–Maryland (IM)
+reference profile. The match is max |Δ| = 0.8%, RMS 0.2%, with an identical
+eclipse width; the only deviation sits at the grazing eclipse edge, which is the
+known ~1% error of the Beloborodov bending approximation vs. exact ray-tracing.
+No new module code — this is the v0.8.0 machinery evaluated at a community
+benchmark.
+
+![Rung B: our SD1a waveform on the IM code-comparison reference; the residual peaks at the grazing eclipse edge](data/pulse_profile_rung_b.png)
+
+📐 **Full derivation:** [v0.8.1 — Rung B, Agreeing With the Community Codes](docs/deep-dives/v0.8.1-rung-b.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **Benchmark:** Bogdanov et al. 2019 (ApJL 887 L26) Test SD1a — ν = 1 Hz, spot
+  radius 0.01 rad (a point), isotropic Planck, i = θ_s = 90°, M = 1.4 M⊙,
+  R = 12 km → u = 2GM/Rc² ≈ 0.3445. Reference waveform from the IM code.
+- **Why SD1a:** at 1 Hz, v/c ≈ 2.5e-4, so Doppler / aberration / oblateness are
+  negligible — the pure Schwarzschild light-bending limit our slow-rotation model
+  targets. With isotropic emission the normalized shape is achromatic, so our
+  bolometric curve compares directly to their monochromatic-at-1-keV curve.
+- **Result:** visible fraction 0.6797 (ours) = 0.6797 (IM); max |Δ| = 0.81% at the
+  eclipse edge; RMS = 0.18%; bulk profile to 0.01–0.05%. Eclipse 116.6° wide (vs
+  180° flat) — bending shows ≈ 32° around the back. PF = 1 both (true eclipse).
+- **Reference data is not committed** — third-party AAS supplementary material,
+  gitignored; download + extract to `data/l26_reference/` to reproduce, and the
+  test skips cleanly without it. Provenance / licensing:
+  [docs/references.md](docs/references.md#reference-data-sets).
+- **Code:** `scripts/rung_b_compare.py` → `data/pulse_profile_rung_b.png`; new
+  `test_rung_b_*` in `tests/test_pulse.py`. Tests: 36/36 pass.
+</details>
+
+**Next:** Rung C (v0.9.0) — swap in the scattering beaming `I(μ; τ)` at fixed
+geometry for the headline isotropic-vs-realistic ΔPF result.
+
+---
+
 ### v0.8.0 — A spinning hot spot becomes a pulse profile
-*2026-06-08 · commit `<pending>`*
+*2026-06-08 · commit `9dfe74f`*
 
 **The beaming function now drives an actual observable: brightness vs. rotation phase for a hot
 spot on a spinning neutron star. The geometry, gravitational light bending, and integration are
@@ -413,6 +462,7 @@ mc-radiative-transfer/
 │   ├── convergence_study.py   # Photon-count convergence study (error vs N, recommended N)
 │   ├── tau_sweep.py           # τ sweep → I(μ; τ) beaming-function library
 │   ├── pulse_demo.py          # Pulse-profile demo + Rung A verification figure
+│   ├── rung_b_compare.py      # Rung B: SD1a vs. the NICER code-comparison reference
 │   └── plot_paths.py          # 3D random-walk visualization
 ├── tests/
 │   ├── conftest.py            # Makes `mcrt` importable without install
@@ -431,8 +481,10 @@ mc-radiative-transfer/
 │   │   ├── v0.6.2-reproducible-seeding.md
 │   │   ├── v0.7.0-convergence-study.md
 │   │   ├── v0.8.0-pulse-profile.md
+│   │   ├── v0.8.1-rung-b.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
+│   ├── references.md          # Central bibliography (papers + data sources)
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
 │   ├── RNAA_draft.pdf         # Paper draft
 │   └── proposal/              # Proposal + future directions
@@ -446,6 +498,7 @@ pip install -e .              # makes `mcrt` importable everywhere
 python scripts/validate_engine.py   # validation + beaming-function plot
 python scripts/convergence_study.py # photon-count convergence study (error vs N)
 python scripts/pulse_demo.py        # pulse-profile demo + Rung A verification figure
+python scripts/rung_b_compare.py    # Rung B vs. the NICER code comparison (needs the L26 reference — see docs/references.md)
 python scripts/plot_paths.py        # random-walk visualization
 pytest                              # run the unit tests
 ```
@@ -462,7 +515,8 @@ pytest                              # run the unit tests
 - [x] **Patch — v0.6.2**: Reproducible seeding — explicit `numpy.random.Generator` threaded through the engine; the prerequisite for measurable error bars
 - [x] **Patch — v0.7.0**: Convergence study (error vs N) — defensible photon counts replace the by-feel values; vectorization assessed and deferred
 - [x] **Weeks 8-9 — v0.8.0**: Pulse-profile machinery + Rung A (point spot, Beloborodov bending, verified vs. closed form to machine precision)
-- [ ] **Weeks 8-9 — v0.8.1 / v0.9.x**: Rung B (Bogdanov L26 code comparison, best-effort), Rung C (isotropic-vs-realistic ΔPF), Rung D (real-star anchor)
+- [x] **Week 9 — v0.8.1**: Rung B — reproduced the Bogdanov L26 SD1a code-comparison waveform (matched the IM reference to ~1%, limited by the Beloborodov approximation)
+- [ ] **v0.9.x**: Rung C (isotropic-vs-realistic ΔPF), Rung D (real-star anchor)
 - [ ] **Phase 4**: Analysis & paper completion
 
 ---
