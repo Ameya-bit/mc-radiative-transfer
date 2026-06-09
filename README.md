@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.8.1 — Rung B: our waveform matches the NICER code comparison
-*2026-06-09 · commit `<pending>`*
+*2026-06-09 · commit `46d88bb`*
 
 **The pulse-profile machinery now reproduces a published NICER code-comparison
 waveform to ~1% — independent confirmation that our geometry and light bending
