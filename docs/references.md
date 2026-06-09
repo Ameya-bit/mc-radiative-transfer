@@ -4,9 +4,11 @@
 > file by anchor (e.g. `[Beloborodov (2002)](../references.md#beloborodov-2002)`)
 > instead of repeating full citations. Add a source here once, cite it everywhere.
 >
-> Bibcodes for the pulse-profile / NICER references were checked against ADS/IOP
-> on 2026-06-09 (see `paper-physics-grounding.md §4`). When you add a source,
-> include a stable link (ADS bibcode or DOI) and note which version first used it.
+> The pulse-profile / NICER bibcodes below were checked against ADS/IOP on
+> 2026-06-09 — all five confirmed (Beloborodov 2002 ApJ 566 L85; Poutanen &
+> Beloborodov 2006 MNRAS 373 836; Bogdanov 2019 ApJL 887 L26; Riley 2019 ApJL 887
+> L21; Miller 2019 ApJL 887 L24). When you add a source, include a stable link
+> (ADS bibcode or DOI) and note which version first used it.
 
 ---
 
@@ -31,8 +33,15 @@ packets" (we do single-photon transport, not Lucy packet splitting).
 ### Chandrasekhar (1960)
 *Radiative Transfer.* Dover. — The H-function for a semi-infinite scattering
 atmosphere; the exact limb-darkening law our beaming function is validated
-against. (Caveat: scalar/isotropic H vs. Rayleigh H; semi-infinite H vs. the
-finite-slab X/Y functions — see `paper-physics-grounding.md §3`.)
+against. Two caveats to state honestly in the paper:
+(1) **scattering law** — the engine uses the Rayleigh/Thomson pattern ¾(1+μ²),
+while the H compared against is the *scalar isotropic* (p=1) solution
+(Chandrasekhar's Rayleigh case is a polarization-coupled matrix problem); the
+shapes agree closely but are not strictly the same physics. A clean apples-to-
+apples fix is an isotropic-scattering mode that should reproduce scalar H(μ) to
+within noise.
+(2) **finite vs. semi-infinite** — H is the τ→∞ limit, so finite slabs (τ≲1)
+deviate; the rigorous finite-τ benchmark is Chandrasekhar's **X- and Y-functions**.
 *Used in:* v0.5.1, v0.6.0–v0.6.1 (`src/mcrt/theory.py`, beaming validation).
 
 ### Eddington limb darkening
@@ -91,7 +100,7 @@ ApJL, 887, L24. [DOI: 10.3847/2041-8213/ab50c5](https://doi.org/10.3847/2041-821
 - **Ho & Lai (2001)**, MNRAS, 327, 1081 — magnetic atmospheres. The draft's
   "magnetic anisotropy" framing; deferred (the engine is Thomson-only).
 - **Morsink et al. (2007)**, ApJ, 663, 1244 — oblate-Schwarzschild; only if a
-  reviewer raises oblateness (explicitly out of scope, see `to_finish.md §7`).
+  reviewer raises oblateness (oblateness/Doppler are out of project scope).
 - **Psaltis & Özel (2014)**, ApJ, 792, 87 — special-relativistic / oblateness
   corrections; same out-of-scope note.
 
