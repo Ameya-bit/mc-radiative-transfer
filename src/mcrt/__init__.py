@@ -1,6 +1,6 @@
 """Monte Carlo radiative transfer through a plane-parallel neutron star atmosphere."""
 
-from .beaming import extract_intensity, fit_limb_darkening_slope
+from .beaming import beaming_lookup, extract_intensity, fit_limb_darkening_slope
 from .convergence import (
     find_knee,
     loglog_slope,
@@ -31,6 +31,7 @@ __all__ = [
     "PulseProfile",
     "Simulation",
     "analytic_isotropic_pf",
+    "beaming_lookup",
     "bend",
     "chandrasekhar_h",
     "compute_profile",

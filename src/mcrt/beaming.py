@@ -1,6 +1,11 @@
 """Turn Monte Carlo escape angles into the emergent specific intensity I(μ)."""
 
+from typing import Callable
+
 import numpy as np
+
+# A beaming law maps emission cosine μ = cos α (array) to specific intensity I(μ).
+BeamingFunc = Callable[[np.ndarray], np.ndarray]
 
 
 def extract_intensity(escaped_mu, n_bins=20):
@@ -31,3 +36,28 @@ def fit_limb_darkening_slope(mu_centers, intensity, mu_floor=0.1):
     A = np.vstack([np.ones(mask.sum()), mu_centers[mask]]).T
     a, slope = np.linalg.lstsq(A, intensity[mask], rcond=None)[0]
     return slope / a
+
+
+def beaming_lookup(mu_centers, intensity) -> BeamingFunc:
+    """Build a callable ``I(μ)`` that linearly interpolates a tabulated curve.
+
+    ``mu_centers`` (ascending) and ``intensity`` are one optical-depth row of the
+    beaming library (``data/beaming_library.npz``: ``mu_centers`` and a row of
+    ``intensity_by_tau``). The returned function evaluates ``I`` at an arbitrary
+    emission cosine ``μ = cos α`` — exactly the ``beaming`` callable that
+    :func:`mcrt.pulse.point_spot_flux` expects for the isotropic-vs-realistic
+    comparison, where only the brightness term changes and the geometry is held fixed.
+
+    Outside the tabulated μ range the curve is **held flat at its end values**
+    (``np.interp`` clamping). That is the honest choice: the grazing μ→0 tail is
+    the noisiest part of the library — the very bins :func:`fit_limb_darkening_slope`
+    excludes below μ≈0.1 — so extrapolating it would amplify Monte Carlo noise,
+    and μ never exceeds the μ≈1 normalization bin in practice.
+    """
+    mu_centers = np.asarray(mu_centers, dtype=float)
+    intensity = np.asarray(intensity, dtype=float)
+
+    def beaming(mu):
+        return np.interp(np.asarray(mu, dtype=float), mu_centers, intensity)
+
+    return beaming

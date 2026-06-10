@@ -1,6 +1,6 @@
-"""Rung A verification for the point-spot pulse-profile machinery.
+"""Verification tests for the point-spot pulse-profile machinery.
 
-The load-bearing test is ``test_rung_a_*``: the full numerical pipeline
+The load-bearing group is the **analytic check**: the full numerical pipeline
 (phase grid → cos ψ → Beloborodov bending → visibility clip → flux → pulsed
 fraction) must reproduce an *algebraically independent* closed form for the
 isotropic point spot. The closed forms are derived inline here from the
@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from mcrt.beaming import beaming_lookup
 from mcrt.pulse import (
     analytic_isotropic_pf,
     bend,
@@ -21,11 +22,12 @@ from mcrt.pulse import (
     pulsed_fraction,
     visibility_threshold,
 )
+from mcrt.theory import eddington_limb_darkening
 
 # IM-code reference waveform from the L26 supplementary archive (apjlab5968.tar.gz).
 # That archive is third-party AAS material and is gitignored (data/*), so it is
-# present only after a local download+extract; the Rung B test skips cleanly
-# without it so the suite still passes on a fresh checkout. See docs/references.md.
+# present only after a local download+extract; the code-comparison test skips
+# cleanly without it so the suite still passes on a fresh checkout. See docs/references.md.
 SD1A_REFERENCE = Path(__file__).resolve().parents[1] / "data" / "l26_reference" / "SD1a_test_IM.txt"
 
 # A geometry the spot never dips behind the star: cos ψ_min = cos(i+θ_s) stays
@@ -78,9 +80,9 @@ def test_pulsed_fraction_zero_when_flux_identically_zero():
     assert pulsed_fraction(np.zeros(8)) == 0.0
 
 
-# --- Rung A: isotropic point spot vs. closed form ----------------------------
+# --- analytic check: isotropic point spot vs. closed form --------------------
 
-def test_rung_a_flux_shape_matches_analytic_isotropic_form():
+def test_flux_shape_matches_analytic_isotropic_form():
     """Where visible, isotropic flux is exactly F ∝ (1−u)(u + (1−u) cos ψ).
 
     This pins the flux *pipeline* (bending + projection) to machine precision,
@@ -96,7 +98,7 @@ def test_rung_a_flux_shape_matches_analytic_isotropic_form():
     assert np.allclose(flux, expected)
 
 
-def test_rung_a_pulsed_fraction_matches_closed_form_always_visible():
+def test_pulsed_fraction_matches_closed_form_always_visible():
     """Numerical PF reproduces the closed-form isotropic PF to < 1% (here far tighter).
 
     Closed form (always visible, so extremes sit at φ = 0, π):
@@ -117,7 +119,7 @@ def test_rung_a_pulsed_fraction_matches_closed_form_always_visible():
     assert analytic_isotropic_pf(i, theta, u) == pytest.approx(pf_closed)  # module closed form agrees too
 
 
-def test_rung_a_eclipse_drives_flux_to_zero_and_pf_to_one():
+def test_eclipse_drives_flux_to_zero_and_pf_to_one():
     """When ψ_max > 90° past the bending threshold, the spot sets: F_min = 0, PF = 1."""
     g = ECLIPSING
     prof = compute_profile(g["inclination"], g["colatitude"], g["compactness"], n_phase=1024)
@@ -126,7 +128,7 @@ def test_rung_a_eclipse_drives_flux_to_zero_and_pf_to_one():
     assert pulsed_fraction(prof.flux) == pytest.approx(1.0)
 
 
-def test_rung_a_spot_is_visible_around_the_back():
+def test_spot_is_visible_around_the_back():
     """Light bending makes part of the far hemisphere (cos ψ < 0) still visible."""
     g = ECLIPSING
     prof = compute_profile(g["inclination"], g["colatitude"], g["compactness"], n_phase=1024)
@@ -142,7 +144,7 @@ def test_analytic_isotropic_pf_rejects_eclipsing_geometry():
         analytic_isotropic_pf(g["inclination"], g["colatitude"], g["compactness"])
 
 
-# --- beaming swap (the seam Rung C will use) ---------------------------------
+# --- beaming swap (used by the isotropic-vs-realistic comparison) ------------
 
 def test_beaming_callable_modulates_flux_but_not_geometry():
     """Passing I(μ) changes only the brightness term; isotropic ≡ constant beaming."""
@@ -154,7 +156,59 @@ def test_beaming_callable_modulates_flux_but_not_geometry():
     assert np.allclose(iso, const)
 
 
-# --- Rung B: SD1a vs. the NICER code-comparison (IM) reference -----------------
+# --- the isotropic-vs-realistic beaming comparison (the headline result) -----
+
+def test_beaming_lookup_interpolates_at_nodes_and_clamps_outside():
+    """The library lookup is exact on its μ nodes, linear between, flat at the edges.
+
+    Clamping (not extrapolating) the μ→0 / μ→1 ends is the intended behaviour: the
+    grazing tail is the noisiest part of the library, so the curve is held at its
+    end values rather than amplified beyond them.
+    """
+    mu = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    intensity = np.array([1.2, 1.6, 2.0, 2.4, 2.8])  # a clean linear test curve
+    beaming = beaming_lookup(mu, intensity)
+
+    assert np.allclose(beaming(mu), intensity)             # exact on the nodes
+    assert beaming(0.4) == pytest.approx(1.8)              # halfway between nodes
+    assert beaming(0.0) == pytest.approx(intensity[0])     # clamped below the range
+    assert beaming(1.0) == pytest.approx(intensity[-1])    # clamped above the range
+
+
+def test_limb_darkening_raises_pulsed_fraction_vs_isotropic():
+    """Limb darkening (I rising with μ) *sharpens* the pulse: PF_real > PF_iso.
+
+    The bright phase faces us (μ = cos α near max) and the faint phase grazes the
+    limb (small μ). A monotone-increasing I(μ) — here the Eddington law 1 + 1.5μ —
+    multiplies the bright phase by more than the faint phase, widening the max/min
+    contrast. This locks the *sign* of the isotropic-vs-realistic result into a test.
+    """
+    g = ALWAYS_VISIBLE
+    i, theta, u = g["inclination"], g["colatitude"], g["compactness"]
+
+    pf_iso = pulsed_fraction(compute_profile(i, theta, u).flux)
+    pf_real = pulsed_fraction(compute_profile(i, theta, u, beaming=eddington_limb_darkening).flux)
+
+    assert pf_real > pf_iso
+
+
+def test_beaming_swap_leaves_geometry_identical():
+    """Isotropic and beamed runs share cos α and visibility exactly — only flux differs.
+
+    This is the controlled-experiment guarantee the comparison rests on: ΔPF can only
+    come from the brightness term, never from the geometry shifting underneath it.
+    """
+    g = ALWAYS_VISIBLE
+    i, theta, u = g["inclination"], g["colatitude"], g["compactness"]
+    iso = compute_profile(i, theta, u)
+    real = compute_profile(i, theta, u, beaming=eddington_limb_darkening)
+
+    assert np.array_equal(real.cos_alpha, iso.cos_alpha)
+    assert np.array_equal(real.visible, iso.visible)
+    assert not np.allclose(real.flux, iso.flux)
+
+
+# --- code-comparison check: SD1a vs. the NICER (IM) reference ----------------
 
 # SD1a parameters (Bogdanov et al. 2019, ApJL 887 L26, Table 1): 1 Hz (no Doppler),
 # 0.01 rad spot (a point), isotropic Planck, i = θ_s = 90°, M = 1.4 M_sun, R = 12 km.
@@ -164,12 +218,12 @@ SD1A_COLATITUDE = np.deg2rad(90.0)
 
 # Beloborodov's linear bending map is ~1% accurate for this compactness, so we hold
 # the agreement to 1.2% (the observed worst case is 0.8%, at the grazing eclipse edge).
-RUNG_B_TOLERANCE = 0.012
+CODE_COMPARISON_TOLERANCE = 0.012
 
 
 @pytest.mark.skipif(not SD1A_REFERENCE.exists(),
                     reason="L26 supplementary reference (data/l26_reference/SD1a_test_IM.txt) not present")
-def test_rung_b_sd1a_matches_im_reference_within_beloborodov_accuracy():
+def test_sd1a_matches_im_reference_within_beloborodov_accuracy():
     """Our SD1a profile reproduces the IM community-reference waveform to ~1%.
 
     The reference (column 1 phase in cycles, column 2 photon flux at 1 keV) and our
@@ -189,7 +243,7 @@ def test_rung_b_sd1a_matches_im_reference_within_beloborodov_accuracy():
     ours_n = f_ours / f_ours.max()
 
     # Shape agreement at the ~1% level across the whole rotation.
-    assert np.abs(ours_n - ref_n).max() < RUNG_B_TOLERANCE
+    assert np.abs(ours_n - ref_n).max() < CODE_COMPARISON_TOLERANCE
 
     # The bending-set eclipse window must land on the reference: same visible
     # fraction (gravity lets the spot be seen partway around the back) and a true

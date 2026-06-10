@@ -57,9 +57,9 @@ The classical `I(μ) ∝ 1 + 1.5 μ` two-stream result (textbook; see Chandrasek
 ApJ, 566, L85. [DOI: 10.1086/339511](https://doi.org/10.1086/339511) ·
 [ADS: 2002ApJ...566L..85B](https://ui.adsabs.harvard.edu/abs/2002ApJ...566L..85B)
 — The linear light-bending approximation `cos α = u + (1 − u) cos ψ` with constant
-Jacobian `(1 − u)`; accurate to ~1% for `u ≲ 0.5`. The Rung A closed form and the
-core of `bend()`.
-*Used in:* v0.8.0 (`bend`, `analytic_isotropic_pf`), v0.8.1 (Rung B).
+Jacobian `(1 − u)`; accurate to ~1% for `u ≲ 0.5`. The analytic-check closed form
+and the core of `bend()`.
+*Used in:* v0.8.0 (`bend`, `analytic_isotropic_pf`), v0.8.1 (code-comparison check).
 
 ### Poutanen & Beloborodov (2006)
 MNRAS, 373, 836. [DOI: 10.1111/j.1365-2966.2006.11088.x](https://doi.org/10.1111/j.1365-2966.2006.11088.x) ·
@@ -75,23 +75,23 @@ MNRAS, 373, 836. [DOI: 10.1111/j.1365-2966.2006.11088.x](https://doi.org/10.1111
 ApJL, 887, L26. [DOI: 10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968) ·
 [ADS: 2019ApJ...887L..26B](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..26B)
 — The pulse-profile **code-comparison** suite (test problems SD1/SD2/OS1). The
-Illinois–Maryland (IM) reference waveforms are our **Rung B** benchmark; codes
-agree to ≲ 0.1%. **Note:** this is Paper *II* (L26), not Paper I (L25, the data set).
+Illinois–Maryland (IM) reference waveforms are our **code-comparison** benchmark;
+codes agree to ≲ 0.1%. **Note:** this is Paper *II* (L26), not Paper I (L25, the data set).
 The reference data is a separate, gitignored download — see
 [Reference data sets](#reference-data-sets) below.
-*Used in:* v0.8.1 (Rung B, test SD1a).
+*Used in:* v0.8.1 (code-comparison check, test SD1a).
 
 ### Riley et al. (2019) — J0030, L21
 ApJL, 887, L21. [DOI: 10.3847/2041-8213/ab481c](https://doi.org/10.3847/2041-8213/ab481c) ·
 [ADS: 2019ApJ...887L..21R](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..21R)
 — Amsterdam (X-PSI) M–R and spot geometry for PSR J0030+0451.
-*Will be used in:* v0.9.1 (Rung D real-star anchor).
+*Will be used in:* v0.9.1 (real-star anchor).
 
 ### Miller et al. (2019) — J0030, L24
 ApJL, 887, L24. [DOI: 10.3847/2041-8213/ab50c5](https://doi.org/10.3847/2041-8213/ab50c5) ·
 [ADS: 2019ApJ...887L..24M](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..24M)
 — Illinois–Maryland M–R for PSR J0030+0451 and quoted uncertainties.
-*Will be used in:* v0.9.1 (Rung D).
+*Will be used in:* v0.9.1 (real-star anchor).
 
 ---
 
@@ -108,15 +108,15 @@ ApJL, 887, L24. [DOI: 10.3847/2041-8213/ab50c5](https://doi.org/10.3847/2041-821
 
 ## Reference data sets
 
-### L26 code-comparison waveforms (Rung B benchmark)
+### L26 code-comparison waveforms (SD1a benchmark)
 - **What:** ASCII reference pulse profiles from the IM code for the SD1/SD2/OS1
   test problems, distributed as the supplementary archive `apjlab5968.tar.gz`
   attached to [Bogdanov et al. (2019)](#bogdanov-et-al-2019--paper-ii-l26) on
   IOPscience. We use `SD1a_test_IM.txt` (phase in cycles; photon flux at 1 keV).
 - **How to get it:** download the "Supplementary data" archive from the article
   page ([10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968)) and
-  extract it to `data/l26_reference/`. Then `python scripts/rung_b_compare.py`
-  and the Rung B test (`tests/test_pulse.py`) pick it up automatically.
+  extract it to `data/l26_reference/`. Then `python scripts/code_comparison.py`
+  and the code-comparison test (`tests/test_pulse.py`) pick it up automatically.
 - **Why it is not committed:** the archive is third-party AAS material. AAS holds
   copyright on pre-2021-10-11 articles (L26 is 2019) unless gold-OA, and the
   archive's ReadMe grants *use* ("to facilitate testing of other independently

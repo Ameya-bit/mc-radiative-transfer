@@ -1,8 +1,8 @@
 """Demonstrate and verify the point-spot pulse-profile machinery (v0.8.0).
 
-Two panels, saved to data/pulse_profile_rung_a.png:
+Two panels, saved to data/pulse_profile_analytic.png:
 
-  (A) Rung A verification — the numerical pipeline (compute_profile) plotted on
+  (A) Analytic check — the numerical pipeline (compute_profile) plotted on
       top of the closed-form isotropic flux F ∝ (1−u)(u + (1−u) cos ψ) for an
       always-visible geometry. The points sit on the line; the residual is shown
       to be machine-precision, which is exactly what the unit test asserts.
@@ -32,18 +32,18 @@ from mcrt import (
 # One geometry used for both panels (i, θ_s in degrees). At low compactness the
 # spot is eclipsed near φ = π (cos ψ_min = cos 105° ≈ −0.26 sits below the bending
 # horizon); by u ≈ 0.3 bending lifts it into permanent view, where the Beloborodov
-# closed form applies — so we run Rung A at u = 0.3.
+# closed form applies — so we run the analytic check at u = 0.3.
 INCLINATION_DEG = 45.0
 COLATITUDE_DEG = 60.0
-COMPACTNESS_RUNG_A = 0.3
+COMPACTNESS_ANALYTIC = 0.3
 
-FIGURE_PATH = "data/pulse_profile_rung_a.png"
+FIGURE_PATH = "data/pulse_profile_analytic.png"
 
 
-def panel_rung_a(ax, ax_resid):
+def panel_analytic(ax, ax_resid):
     """Numerical profile vs. closed-form isotropic flux, plus the residual."""
     i, theta = np.deg2rad(INCLINATION_DEG), np.deg2rad(COLATITUDE_DEG)
-    u = COMPACTNESS_RUNG_A
+    u = COMPACTNESS_ANALYTIC
 
     prof = compute_profile(i, theta, u, n_phase=400)
     phase_cycles = prof.phase / (2.0 * np.pi)
@@ -57,7 +57,7 @@ def panel_rung_a(ax, ax_resid):
             label="compute_profile (numerical)")
     ax.set_xlabel("rotational phase  φ / 2π")
     ax.set_ylabel("flux  F(φ)  [arb.]")
-    ax.set_title(f"(A) Rung A: isotropic point spot  (i={INCLINATION_DEG:.0f}°, "
+    ax.set_title(f"(A) analytic check: isotropic point spot  (i={INCLINATION_DEG:.0f}°, "
                  f"θ_s={COLATITUDE_DEG:.0f}°, u={u})")
     ax.legend(loc="lower center", fontsize=8)
 
@@ -97,7 +97,7 @@ def panel_smoothing(ax):
 
 def main():
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.6), layout="constrained")
-    panel_rung_a(axes[0], axes[1])
+    panel_analytic(axes[0], axes[1])
     panel_smoothing(axes[2])
     fig.savefig(FIGURE_PATH, dpi=130)
     print(f"saved {FIGURE_PATH}")

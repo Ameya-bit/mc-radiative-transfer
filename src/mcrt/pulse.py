@@ -17,8 +17,8 @@ upstream in the beaming library):
    the map cheap and the verification clean. Because the map shifts cos ψ upward,
    the spot stays visible (cos α ≥ 0) for some ψ > 90°: we "see around the back".
 3. **Beaming.** The local surface brightness ``I(μ)`` at emission cosine
-   ``μ = cos α``. The default here is **isotropic** (``I ≡ 1``); the Rung C result
-   swaps in the scattering beaming function ``I(μ; τ)`` from
+   ``μ = cos α``. The default here is **isotropic** (``I ≡ 1``); the
+   isotropic-vs-realistic comparison swaps in the scattering beaming function ``I(μ; τ)`` from
    ``data/beaming_library.npz`` by passing a ``beaming`` callable. Only that
    brightness term changes — the geometry above is shared, which is what makes the
    isotropic-vs-realistic comparison a controlled experiment.
@@ -31,16 +31,18 @@ The proportional (slow-rotation) bolometric flux from a point spot is
 arbitrary units — only ratios (the pulse shape and PF) are physical.
 
 References:
-    Beloborodov (2002), ApJ 566, L85 — the bending approximation and Rung A benchmark.
+    Beloborodov (2002), ApJ 566, L85 — the bending approximation and the analytic-check benchmark.
     Poutanen & Beloborodov (2006), MNRAS 373, 836 — the bolometric point-spot flux.
 """
 
-from typing import Callable, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 import numpy as np
 
 # A beaming law maps emission cosine μ = cos α (array) to specific intensity I(μ).
-BeamingFunc = Callable[[np.ndarray], np.ndarray]
+# Defined in `beaming` (the dependency-free module that builds these curves) and
+# reused here so the type has one home.
+from .beaming import BeamingFunc
 
 
 class PulseProfile(NamedTuple):
@@ -102,7 +104,8 @@ def point_spot_flux(
     ``F(φ) ∝ (1 − u) · I(cos α) · cos α`` for visible phases, else 0. ``beaming``
     is the surface brightness law ``I(μ)`` evaluated at ``μ = cos α``; ``None``
     means isotropic (``I ≡ 1``). The geometry is identical regardless of
-    ``beaming`` — passing the library's ``I(μ; τ)`` is the only change Rung C makes.
+    ``beaming`` — passing the library's ``I(μ; τ)`` is the only change the
+    realistic-beaming comparison makes.
     """
     cos_a = bend(cos_psi(phase, inclination, colatitude), compactness)
     visible = cos_a >= 0.0
@@ -155,7 +158,7 @@ def analytic_isotropic_pf(inclination: float, colatitude: float, compactness: fl
 
         PF = (1−u)(cosψ_max − cosψ_min) / (2u + (1−u)(cosψ_max + cosψ_min)),
 
-    with cosψ_max = cos(i − θ_s), cosψ_min = cos(i + θ_s). This is the Rung A
+    with cosψ_max = cos(i − θ_s), cosψ_min = cos(i + θ_s). This is the analytic-check
     benchmark. It is only valid when the spot never sets — if cosψ_min falls below
     the bending visibility threshold the minimum is an eclipse (F_min = 0), the
     extremes are no longer at φ = 0, π, and this returns nothing useful, so it
