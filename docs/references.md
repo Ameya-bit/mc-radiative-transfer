@@ -84,14 +84,23 @@ The reference data is a separate, gitignored download — see
 ### Riley et al. (2019) — J0030, L21
 ApJL, 887, L21. [DOI: 10.3847/2041-8213/ab481c](https://doi.org/10.3847/2041-8213/ab481c) ·
 [ADS: 2019ApJ...887L..21R](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..21R)
-— Amsterdam (X-PSI) M–R and spot geometry for PSR J0030+0451.
-*Will be used in:* v0.9.1 (real-star anchor).
+— Amsterdam (X-PSI) M–R and spot geometry for PSR J0030+0451. **Values used (preferred
+ST+PST model, Table 2):** M = 1.34 M⊙, R_eq = 12.71 km (compactness GM/Rc² = 0.156 ⇒
+u = 0.312); inclination i = 0.94 rad (53.9°); ST spot colatitude Θp = 2.23 rad (127.8°),
+PST crescent Θs = 2.91 rad (166.7°); both in the same hemisphere, azimuthal separation
+≈ 0.45 cyc. The two spots are equal-temperature (log₁₀T = 6.11).
+*Used in:* v0.9.1 (real-star anchor — `scripts/j0030_anchor.py`).
 
 ### Miller et al. (2019) — J0030, L24
 ApJL, 887, L24. [DOI: 10.3847/2041-8213/ab50c5](https://doi.org/10.3847/2041-8213/ab50c5) ·
 [ADS: 2019ApJ...887L..24M](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..24M)
-— Illinois–Maryland M–R for PSR J0030+0451 and quoted uncertainties.
-*Will be used in:* v0.9.1 (real-star anchor).
+— Illinois–Maryland M–R for PSR J0030+0451 and quoted uncertainties. **Values used
+(three-oval-spot model, Table 8 medians):** M = 1.443 M⊙, R_e = 13.019 km (compactness
+GM/Rc² = 0.163 ⇒ u = 0.326); observer θobs = 0.878 rad (50.3°); two main spots at
+colatitudes θc1 = 2.270 rad (130.0°), θc2 = 2.417 rad (138.5°), longitude separation
+Δφ2 = 0.460 cyc, oval sizes Δθ·f and temperatures kT ≈ 0.115–0.117 keV (for the
+area × T⁴ weighting); the third spot is negligible and dropped.
+*Used in:* v0.9.1 (real-star anchor — `scripts/j0030_anchor.py`).
 
 ---
 

@@ -20,8 +20,59 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.1 — At a real star, the systematic hides in the waveform shape
+*2026-06-10 · commit `<pending>`*
+
+**Anchored at PSR J0030+0451's published geometry, the beaming systematic almost
+vanishes from the pulsed fraction — and that is the point. J0030's spots eclipse, so
+PF saturates; the systematic moves into the waveform *shape* (~6–8% RMS). Its
+observability is geometry-dependent.**
+
+v0.9.0 found ΔPF up to +0.16 on convenient always-visible geometries. Planting the
+*same* swap at J0030 — the canonical NICER target, using both the Riley 2019 (X-PSI)
+and Miller 2019 (Illinois–Maryland) fits — both teams place the hot spots in the same
+far hemisphere, viewed nearly edge-on. The spots dive behind the star for ~45% of each
+rotation, so the flux hits zero and the pulsed fraction pins at 1 for *both* beamings
+(ΔPF ≈ 0). This is not a null: it is the extreme of v0.9.0's own "high-contrast" corner
+(ΔPF only +0.018 there), where a saturated PF has no headroom. The beaming difference
+doesn't disappear — it reshapes the visible waveform by ~6–8% RMS (growing with τ, like
+the v0.9.0 effect). So the systematic is **PF-visible at intermediate geometries,
+shape-visible at J0030** — geometry decides which measurement can catch it.
+
+![Left: beaming reshapes the J0030 pulse by several percent RMS even though PF is saturated. Center: the two-spot pulse eclipses to zero. Right: a background would un-saturate PF and expose a sign-flipped systematic.](data/pulse_profile_j0030.png)
+
+📐 **Full derivation:** [v0.9.1 — Anchoring the Systematic at a Real Star](docs/deep-dives/v0.9.1-j0030-anchor.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **Geometry (from the papers' tables):** Riley 2019 ST+PST — u = 0.312, i = 53.9°,
+  spots at colatitude 127.8°/166.7°; Miller 2019 three-spot — u = 0.326, i = 50.3°,
+  spots at 130.0°/138.5°. Both same-hemisphere, near edge-on.
+- **Two-spot model, no core change:** light is additive, so the star's flux is the
+  weighted sum of two `compute_profile` calls; the second spot's longitude is an
+  `np.roll` phase shift (separations land on the 1024-point grid). Weights ∝ area × T⁴
+  (Miller) or equal (Riley crescent; robustness-checked). The verified `mcrt.pulse`
+  core is untouched.
+- **Result:** single-spot eclipse fraction 45–46%; two-spot PF = 1.000 (saturated);
+  waveform shape change RMS 0.065 (Riley)/0.075 (Miller), max-local 0.14–0.18.
+- **Caveat (not modeled):** a common unpulsed background would lift the hard-zero floor
+  and re-expose a PF systematic of −0.036…−0.143 (5–30% background) — *negative*,
+  opposite to v0.9.0, because J0030's spots only reach μ ≲ 0.45 so limb darkening dims
+  the peak instead of sharpening the contrast.
+- **Tests: 43/43 pass** (four new: single-spot eclipse, two-spot saturation, shape-
+  changes-while-PF-does-not, azimuth-roll mechanism).
+- Code: `scripts/j0030_anchor.py` → `data/pulse_profile_j0030.png`, `data/j0030_anchor.npz`.
+
+</details>
+
+**Next:** v1.0.0 — the paper. v0.9.0 (the systematic, where PF sees it) and v0.9.1 (its
+geometry-dependence, where it hides) are the two halves of one result.
+
+---
+
 ### v0.9.0 — Scattering limb darkening sharpens the pulse
-*2026-06-10 · commit `_pending_`*
+*2026-06-10 · commit `530eafc`*
 
 **The first science result: swapping the textbook isotropic spot for our measured
 scattering beaming `I(μ; τ)` — at the exact same geometry — raises the pulsed
@@ -572,7 +623,7 @@ pytest                              # run the unit tests
 - [x] **Weeks 8-9 — v0.8.0**: Pulse-profile machinery + the analytic check (point spot, Beloborodov bending, verified vs. closed form to machine precision)
 - [x] **Week 9 — v0.8.1**: Code-comparison check — reproduced the Bogdanov L26 SD1a waveform (matched the IM reference to ~1%, limited by the Beloborodov approximation)
 - [x] **v0.9.0**: Isotropic-vs-realistic ΔPF at fixed geometry; limb darkening sharpens the pulse, ΔPF up to ~+0.16 (the real number replacing the draft's fabricated "∼15%")
-- [ ] **v0.9.1**: Real-star anchor — differential ΔPF at PSR J0030+0451's published geometry vs. NICER's uncertainty
+- [x] **v0.9.1**: Real-star anchor at PSR J0030+0451 (Riley 2019 / Miller 2019) — its spots eclipse, so the pulsed fraction saturates and the beaming systematic moves into the waveform shape (~6–8% RMS); the systematic's observability is geometry-dependent
 - [ ] **Phase 4**: Analysis & paper completion
 
 ---

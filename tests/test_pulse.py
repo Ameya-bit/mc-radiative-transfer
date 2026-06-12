@@ -251,3 +251,89 @@ def test_sd1a_matches_im_reference_within_beloborodov_accuracy():
     assert (ours_n > 0).mean() == pytest.approx((ref_n > 0).mean(), abs=0.02)
     assert pulsed_fraction(f_ref) == pytest.approx(1.0)
     assert pulsed_fraction(f_ours) == pytest.approx(1.0)
+
+
+# --- real-star anchor: PSR J0030+0451 (the geometry-dependence result) --------
+
+# J0030's published geometry, primary spot (Riley et al. 2019, ApJL 887 L21, Table 2):
+# compactness GM/Rc² = 0.156 ⇒ u = 0.312; inclination i = 0.94 rad; the two spots sit
+# in the same (far) hemisphere at colatitudes Θp = 2.23 rad and Θs = 2.91 rad, ~0.45
+# cycle apart in azimuth. The point of these tests is the saturation: both spots dive
+# behind the star, so the pulsed fraction pins at 1 and the beaming systematic moves
+# from PF into the waveform shape. The two-spot sum is reproduced inline (the same
+# np.roll-and-add the j0030_anchor.py script uses) so the test exercises only the core.
+J0030_INCLINATION = 0.94
+J0030_COMPACTNESS = 0.312
+J0030_SPOT1_COLATITUDE = 2.23   # Θp, ST small circular
+J0030_SPOT2_COLATITUDE = 2.91   # Θs, PST crescent
+J0030_AZIMUTH_SEPARATION = 0.45  # cycles between the two spots
+
+
+def _two_spot_flux(beaming, n_phase=1024):
+    """Sum the two J0030 spots; the second rolled by its azimuthal separation."""
+    s1 = compute_profile(J0030_INCLINATION, J0030_SPOT1_COLATITUDE, J0030_COMPACTNESS,
+                         beaming=beaming, n_phase=n_phase).flux
+    s2 = compute_profile(J0030_INCLINATION, J0030_SPOT2_COLATITUDE, J0030_COMPACTNESS,
+                         beaming=beaming, n_phase=n_phase).flux
+    return s1 + np.roll(s2, int(round(J0030_AZIMUTH_SEPARATION * n_phase)))
+
+
+def test_j0030_single_spot_eclipses_for_a_large_phase_fraction():
+    """At J0030's geometry a single point spot is hidden for ~45% of the rotation.
+
+    Both spots sit in the far hemisphere (colatitude ≫ 90°) viewed at i ≈ 54°, so the
+    spot swings behind the star: F_min = 0 and PF saturates at 1. This is the root
+    cause of the whole result.
+    """
+    prof = compute_profile(J0030_INCLINATION, J0030_SPOT1_COLATITUDE, J0030_COMPACTNESS,
+                           n_phase=1024)
+    eclipsed_fraction = float(np.mean(~prof.visible))
+    assert 0.4 < eclipsed_fraction < 0.5
+    assert prof.flux.min() == 0.0
+    assert pulsed_fraction(prof.flux) == pytest.approx(1.0)
+
+
+def test_j0030_two_spots_still_saturate():
+    """Summing both published spots does NOT lift the floor — they hug the same pole.
+
+    The two spots' visible windows leave a gap where the whole star is dark, so the
+    two-spot flux still touches zero and PF stays pinned at 1. (Earlier intuition that
+    a second spot would fill the eclipse fails for J0030's same-hemisphere geometry.)
+    """
+    total = _two_spot_flux(beaming=None)
+    assert total.min() == pytest.approx(0.0)
+    assert pulsed_fraction(total) == pytest.approx(1.0)
+
+
+def test_j0030_beaming_changes_shape_but_not_pulsed_fraction():
+    """The headline: realistic beaming reshapes the visible pulse yet leaves PF = 1.
+
+    Because the eclipse pins PF for *both* beamings, the isotropic-vs-realistic
+    difference cannot show up in the pulsed fraction — it lives in the waveform shape.
+    A monotone limb-darkening law (Eddington 1 + 1.5μ stands in for the scattering
+    beaming) leaves the saturated PF untouched while changing the normalized profile.
+    """
+    iso = _two_spot_flux(beaming=None)
+    real = _two_spot_flux(beaming=eddington_limb_darkening)
+
+    # PF is saturated and blind to the swap ...
+    assert pulsed_fraction(iso) == pytest.approx(1.0)
+    assert pulsed_fraction(real) == pytest.approx(1.0)
+
+    # ... but the peak-normalized waveform genuinely changes shape.
+    shape_rms = np.sqrt(np.mean((real / real.max() - iso / iso.max()) ** 2))
+    assert shape_rms > 0.01
+
+
+def test_two_spot_azimuth_roll_matches_a_half_cycle_shift():
+    """A spot at azimuth 0.5 cyc is the same profile shifted half a rotation.
+
+    Guards the np.roll mechanism the two-spot sum relies on: rolling a 1024-point
+    profile by 512 reproduces evaluating it half a cycle later.
+    """
+    n = 1024
+    flux = compute_profile(J0030_INCLINATION, J0030_SPOT1_COLATITUDE, J0030_COMPACTNESS,
+                           n_phase=n).flux
+    rolled = np.roll(flux, n // 2)
+    half_cycle = np.concatenate([flux[n // 2:], flux[:n // 2]])
+    assert np.array_equal(rolled, half_cycle)
