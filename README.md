@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.9.2 — At a second real star, the systematic lands in the pulsed fraction
-*2026-06-24 · commit `<pending>`*
+*2026-06-24 · commit `474d470`*
 
 **Anchored at PSR J0740+6620 — the non-eclipsing complement of J0030 — the beaming
 systematic comes back to life in the pulsed fraction: ΔPF ≈ +0.16 (Riley 2021) to
