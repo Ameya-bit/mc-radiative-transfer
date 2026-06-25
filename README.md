@@ -20,6 +20,66 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.2 — At a second real star, the systematic lands in the pulsed fraction
+*2026-06-24 · commit `<pending>`*
+
+**Anchored at PSR J0740+6620 — the non-eclipsing complement of J0030 — the beaming
+systematic comes back to life in the pulsed fraction: ΔPF ≈ +0.16 (Riley 2021) to
++0.23 (Miller 2021) at τ ≈ 10. J0740's two hot spots are anti-phased and *tile* the
+rotation, so the pulse never reaches zero, PF stays unsaturated, and the swap shows up
+where NICER reads it. Both teams agree.**
+
+v0.9.1 showed the systematic *hides* at J0030 because its same-hemisphere spots eclipse
+and pin PF at 1. J0740 is the opposite geometry: viewed nearly edge-on (i ≈ 87.6°) but
+extremely compact (u ≈ 0.494), so light bending keeps Riley's two spots (colatitudes
+77°/108°, opposite hemispheres) visible *all* rotation — they only graze the limb
+(μ_min ≈ 0.005), never set. Anti-phased ~half a cycle apart, they tile the cycle: the
+two-spot pulse floor is `F_min/F_max ≈ 0.70`, so `PF_iso ≈ 0.18` — low and far from
+saturation. The isotropic→realistic swap then raises PF directly, **ΔPF = +0.164 at
+τ ≈ 10** (PF: 0.18 → 0.34), the same sign, size, and τ-shape as v0.9.0's invented
+geometries — now on a published star, and PF-visible. Miller's independent fit places
+the spots on the equator (≈ 92°), where each *center* dips behind for ~21% of the cycle
+— yet anti-phasing keeps the combined pulse off zero (floor ≈ 0.63), so PF stays
+unsaturated and ΔPF ≈ +0.23. The lesson v0.9.1 hinted at is now precise: what saturates
+PF is not single-spot eclipse but whether the spots **tile** the rotation.
+
+![Left: ΔPF rises with τ to +0.16/+0.23 — the beaming systematic in the pulsed fraction. Center: J0740's non-eclipsing double-peaked pulse, sharpened by realistic beaming. Right: an assumed background only dilutes the positive ΔPF.](data/pulse_profile_j0740.png)
+
+📐 **Full derivation:** [v0.9.2 — The Systematic Lands in the Pulsed Fraction](docs/deep-dives/v0.9.2-j0740-anchor.md)
+
+<details>
+<summary>Technical details</summary>
+
+- **Geometry (from the papers' tables):** Riley 2021 ST-U — u = 0.494, i = 87.6°, two
+  single-temperature circular caps at colatitude 77.3°/108.3°, ζ ≈ 0.147, log₁₀T ≈ 5.99,
+  Δφ ≈ 0.442 (anti-phased). Miller 2021 two-circle — u = 0.444, i = 87.5°, spots at
+  91.7°/92.4° (≈ equatorial), Δφ = 0.558.
+- **Two-spot model, no core change:** light is additive, so the star's flux is the
+  weighted sum of two `compute_profile` calls; the second spot's longitude is an
+  `np.roll` phase shift. Weights ∝ area(sin²ζ) × T⁴ (near-equal caps). Mechanics now in
+  the shared `scripts/anchor_lib.py`, from which the v0.9.1 J0030 script reproduces its
+  numbers bit-for-bit.
+- **Result:** Riley single-spot eclipse fraction 0% (μ_min ≈ 0.005), two-spot floor 0.70,
+  PF_iso = 0.178, **ΔPF = +0.164 at τ ≈ 10** (PF_real = 0.342). Miller single-spot
+  eclipse 21%, but two-spot floor 0.63, PF_iso = 0.227, ΔPF = +0.229. Positive throughout,
+  peaking near τ ≈ 10 like `b(τ)`.
+- **Robustness (not a caveat this time):** an assumed unpulsed background only dilutes the
+  positive ΔPF (Riley +0.16 → +0.10, Miller +0.23 → +0.15 over 5–30%); it is not a
+  saturation-edge artifact the way J0030's background panel was.
+- **Candidate that didn't qualify:** PSR J0437−4715 (Choudhury 2024) eclipses (near-polar
+  primary at Θ ≈ 8°), so J0740 is the non-eclipsing star.
+- **Tests: 47/47 pass** (four new: single spot never eclipses, anti-phased spots tile and
+  stay off zero, beaming raises PF, Miller's spots eclipse yet the sum does not saturate).
+- Code: `scripts/j0740_anchor.py` → `data/pulse_profile_j0740.png`, `data/j0740_anchor.npz`.
+
+</details>
+
+**Next:** v1.0.0 — the paper. v0.9.0 (the systematic, ≈ +0.16 in PF), v0.9.1 (it hides in
+shape when the geometry eclipses), and v0.9.2 (it lands in PF when the spots tile) are the
+three rungs of one result.
+
+---
+
 ### v0.9.1 — At a real star, the systematic hides in the waveform shape
 *2026-06-10 · commit `<pending>`*
 

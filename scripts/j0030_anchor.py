@@ -41,41 +41,26 @@ and light is additive so the star's flux is the weighted sum.
 Run from the repository root:  python scripts/j0030_anchor.py
 """
 
-from typing import NamedTuple, Sequence
-
 import numpy as np
 import matplotlib.pyplot as plt
 
 from mcrt import beaming_lookup, compute_profile, pulsed_fraction
+from anchor_lib import (
+    BACKGROUND_FRACS,
+    N_PHASE,
+    SHAPE_TAU,
+    Anchor,
+    Spot,
+    delta_pf_vs_background,
+    load_library,
+    shape_tau_index,
+    single_spot_eclipsed_fraction,
+    two_spot_flux,
+    waveform_shape_change,
+)
 
-LIBRARY_PATH = "data/beaming_library.npz"
 FIGURE_PATH = "data/pulse_profile_j0030.png"
 RESULTS_PATH = "data/j0030_anchor.npz"
-
-N_PHASE = 1024
-SHAPE_TAU = 10.0  # τ where the limb-darkening slope b(τ) peaks (Rung C result)
-BACKGROUND_FRACS = np.array([0.0, 0.05, 0.10, 0.20, 0.30])  # caveat panel only
-
-
-class Spot(NamedTuple):
-    """One hot spot reduced to a point at its center colatitude.
-
-    ``azimuth`` is the spot's longitude in cycles (only *relative* azimuth between a
-    star's spots matters for the pulse; the absolute value is an arbitrary phase
-    zero). ``weight`` is the relative bolometric amplitude ∝ (emitting area) × T_eff⁴.
-    """
-    colatitude: float  # θ_s, radians
-    azimuth: float     # longitude, cycles
-    weight: float      # relative amplitude ∝ area × T⁴
-
-
-class Anchor(NamedTuple):
-    """A published J0030 operating point: spacetime + two-spot geometry."""
-    label: str
-    inclination: float    # i, radians
-    compactness: float    # u = 2GM/Rc² (median)
-    spots: Sequence[Spot]
-    note: str             # weighting provenance / caveat
 
 
 # --- Published geometries (verified against the papers' tables) ----------------
@@ -120,68 +105,10 @@ MILLER = Anchor(
 ANCHORS = (RILEY, MILLER)
 
 
-def two_spot_flux(inclination, compactness, spots, beaming, n_phase=N_PHASE):
-    """Weighted sum of point-spot fluxes; azimuth = integer phase roll.
-
-    Light is additive, so the observed flux is the weighted sum of each spot's
-    single-spot profile. A spot at longitude φ₀ produces the φ₀-shifted profile,
-    which on a uniform full-cycle grid is ``np.roll`` by round(φ₀·n_phase). The same
-    ``beaming`` is handed to every spot, so swapping it is still the only change.
-    """
-    total = np.zeros(n_phase)
-    for spot in spots:
-        prof = compute_profile(inclination, spot.colatitude, compactness,
-                               beaming=beaming, n_phase=n_phase)
-        shift = int(round(spot.azimuth * n_phase)) % n_phase
-        total += spot.weight * np.roll(prof.flux, shift)
-    return total
-
-
-def single_spot_eclipsed_fraction(inclination, colatitude, compactness, n_phase=N_PHASE):
-    """Fraction of the rotation a *single* point spot spends below the horizon.
-
-    A large value is why J0030 saturates: it forces F_min = 0, pinning PF = 1 for
-    every beaming and so flattening the pulsed-fraction systematic to ΔPF ≈ 0.
-    """
-    prof = compute_profile(inclination, colatitude, compactness, n_phase=n_phase)
-    return float(np.mean(~prof.visible))
-
-
-def waveform_shape_change(iso_flux, real_flux):
-    """Change between the two peak-normalized waveforms — the eclipse-immune metric.
-
-    Returns (rms, max_local). Because each profile is divided by its own peak, this
-    measures a *shape* difference and is insensitive to the saturated absolute PF.
-    """
-    ni = iso_flux / iso_flux.max()
-    nr = real_flux / real_flux.max()
-    diff = nr - ni
-    return float(np.sqrt(np.mean(diff**2))), float(np.max(np.abs(diff)))
-
-
-def delta_pf_vs_background(iso_flux, real_flux, bg_fracs=BACKGROUND_FRACS):
-    """Caveat sensitivity: ΔPF if an unpulsed background lifted the hard-zero floor.
-
-    Adds a common absolute background B (as a fraction of the isotropic peak) to both
-    curves and reports ΔPF(B). At B = 0 the eclipse pins both PFs at 1 (ΔPF = 0); a
-    growing background un-saturates the pulse and exposes a (negative) PF systematic.
-    We do not pick a B — this only shows the dependence.
-    """
-    f_scale = iso_flux.max()
-
-    def pf(f):
-        lo, hi = float(f.min()), float(f.max())
-        return (hi - lo) / (hi + lo) if (hi + lo) > 0 else 0.0
-
-    out = np.zeros(len(bg_fracs))
-    for k, b in enumerate(bg_fracs):
-        out[k] = pf(real_flux + b * f_scale) - pf(iso_flux + b * f_scale)
-    return out
-
-
 def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
     """Per-τ waveform-shape change (the headline) plus the saturation/caveat numbers."""
     iso = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, None)
+    shape_idx = shape_tau_index(tau_values)  # raises if SHAPE_TAU left the grid
     shape_rms = np.zeros(len(tau_values))
     shape_max = np.zeros(len(tau_values))
     real_at_shape_tau = None
@@ -189,7 +116,7 @@ def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
         beaming = beaming_lookup(mu_centers, intensity_by_tau[ti])
         real = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, beaming)
         shape_rms[ti], shape_max[ti] = waveform_shape_change(iso, real)
-        if tau_values[ti] == SHAPE_TAU or real_at_shape_tau is None:
+        if ti == shape_idx:
             real_at_shape_tau = real
 
     return {
@@ -202,11 +129,6 @@ def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
         "iso_flux": iso,
         "real_flux": real_at_shape_tau,
     }
-
-
-def load_library(path=LIBRARY_PATH):
-    d = np.load(path)
-    return d["tau_values"], d["mu_centers"], d["intensity_by_tau"]
 
 
 def plot_result(tau_values, results, path=FIGURE_PATH):

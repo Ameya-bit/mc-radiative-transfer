@@ -337,3 +337,104 @@ def test_two_spot_azimuth_roll_matches_a_half_cycle_shift():
     rolled = np.roll(flux, n // 2)
     half_cycle = np.concatenate([flux[n // 2:], flux[:n // 2]])
     assert np.array_equal(rolled, half_cycle)
+
+
+# --- second real-star anchor: PSR J0740+6620 (the non-eclipsing complement) ----
+
+# J0740's published geometry (Riley et al. 2021, ApJL 918 L27, ST-U): compactness
+# GM/Rc² = 0.247 ⇒ u = 0.494; inclination i = 1.5284 rad (87.6°), nearly edge-on. Its
+# two single-temperature circular caps sit in OPPOSITE hemispheres — colatitudes
+# Θp = 1.35 rad (77°) and Θs = 1.89 rad (108°) — and are ~half a cycle apart in azimuth
+# (Δφ ≈ 0.442). The point of these tests is the contrast with J0030: here no spot ever
+# sets (the extreme compactness bends light around the back), and the anti-phased spots
+# tile the rotation, so PF is unsaturated and the beaming swap lands in the pulsed
+# fraction. The Miller 2021 (ApJL 918 L28) constants exercise the subtler case where
+# each spot's center does eclipse but anti-phasing still keeps the combined pulse off
+# zero. As with J0030, the two-spot sum is reproduced inline (np.roll-and-add) so the
+# tests exercise only the verified core.
+J0740_INCLINATION = 1.5284
+J0740_COMPACTNESS = 0.494
+J0740_SPOT1_COLATITUDE = 1.35   # Θp, northern cap
+J0740_SPOT2_COLATITUDE = 1.89   # Θs, southern cap
+J0740_AZIMUTH_SEPARATION = 0.442  # cycles between the two spots (anti-phased)
+
+# Miller 2021 ST-equivalent: equatorial spots (Θ ≈ 92°), u = 0.444, i = 1.527 rad.
+J0740M_INCLINATION = 1.527
+J0740M_COMPACTNESS = 0.444
+J0740M_SPOT1_COLATITUDE = 1.600
+J0740M_SPOT2_COLATITUDE = 1.612
+J0740M_AZIMUTH_SEPARATION = 0.558
+
+
+def _j0740_two_spot_flux(beaming, n_phase=1024):
+    """Sum J0740's two Riley spots; the second rolled by its azimuthal separation."""
+    s1 = compute_profile(J0740_INCLINATION, J0740_SPOT1_COLATITUDE, J0740_COMPACTNESS,
+                         beaming=beaming, n_phase=n_phase).flux
+    s2 = compute_profile(J0740_INCLINATION, J0740_SPOT2_COLATITUDE, J0740_COMPACTNESS,
+                         beaming=beaming, n_phase=n_phase).flux
+    return s1 + np.roll(s2, int(round(J0740_AZIMUTH_SEPARATION * n_phase)))
+
+
+def test_j0740_single_spot_never_eclipses():
+    """At J0740's geometry a single point spot stays visible the whole rotation.
+
+    The extreme compactness (u = 0.494) bends light far enough around the back that the
+    spot only grazes the limb (μ_min ≈ 0.005) instead of setting. F_min > 0 and PF < 1,
+    so — unlike J0030 — the pulsed fraction is unsaturated and can register a beaming
+    swap. This is the root cause of the whole J0740 result.
+    """
+    prof = compute_profile(J0740_INCLINATION, J0740_SPOT1_COLATITUDE, J0740_COMPACTNESS,
+                           n_phase=1024)
+    assert np.all(prof.visible)                       # never dips behind the star
+    assert prof.flux.min() > 0.0                      # so the flux floor is non-zero
+    assert 0.0 < prof.cos_alpha[prof.visible].min() < 0.05   # but it grazes the limb
+    assert pulsed_fraction(prof.flux) < 1.0           # unsaturated
+
+
+def test_j0740_two_spots_tile_the_rotation_and_stay_off_zero():
+    """Anti-phased opposite-hemisphere spots keep the combined pulse far from zero.
+
+    The opposite of J0030: there same-hemisphere spots leave a dark gap and PF pins at 1;
+    here the two spots tile the cycle, so the summed flux floor is a large fraction of the
+    peak and PF stays well below saturation — leaving headroom for the beaming systematic.
+    """
+    total = _j0740_two_spot_flux(beaming=None)
+    assert total.min() / total.max() > 0.5            # deep, non-zero floor (tiled)
+    assert pulsed_fraction(total) < 0.3               # far from saturation
+
+
+def test_j0740_beaming_raises_pulsed_fraction():
+    """The headline: realistic limb darkening raises J0740's pulsed fraction (ΔPF > 0).
+
+    Because nothing eclipses, the isotropic→realistic swap shows up directly in PF, with
+    the same sign as v0.9.0 (limb darkening sharpens the pulse). A monotone law (Eddington
+    1 + 1.5μ) stands in for the scattering beaming so the sign claim does not rest on the
+    specific library numbers.
+    """
+    iso = _j0740_two_spot_flux(beaming=None)
+    real = _j0740_two_spot_flux(beaming=eddington_limb_darkening)
+
+    pf_iso, pf_real = pulsed_fraction(iso), pulsed_fraction(real)
+    assert pf_iso < 1.0 and pf_real < 1.0             # neither is saturated ...
+    assert pf_real > pf_iso + 0.02                    # ... and the swap lifts PF
+
+
+def test_j0740_miller_spots_eclipse_yet_combined_pulse_does_not_saturate():
+    """Single-spot eclipse is not the discriminator — tiling is.
+
+    Miller's equatorial spots each have their center hidden for a fraction of the cycle,
+    yet because the two are anti-phased their eclipses fall at opposite phases and the
+    combined pulse never reaches zero. So PF stays unsaturated even though a single spot
+    eclipses — the same lesson the J0740 headline rests on.
+    """
+    single = compute_profile(J0740M_INCLINATION, J0740M_SPOT1_COLATITUDE,
+                             J0740M_COMPACTNESS, n_phase=1024)
+    assert single.flux.min() == 0.0                   # the lone spot's center does set
+    assert 0.1 < float(np.mean(~single.visible)) < 0.35
+
+    s1 = single.flux
+    s2 = compute_profile(J0740M_INCLINATION, J0740M_SPOT2_COLATITUDE, J0740M_COMPACTNESS,
+                         n_phase=1024).flux
+    total = s1 + np.roll(s2, int(round(J0740M_AZIMUTH_SEPARATION * 1024)))
+    assert total.min() > 0.0                          # but the tiled sum stays off zero
+    assert pulsed_fraction(total) < 1.0               # so PF is not saturated
