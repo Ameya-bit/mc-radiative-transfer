@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.9.3 — Research notes: direction, conventions, and J0030's geometry
-*2026-06-29 · commit `<pending>`*
+*2026-06-29 · commit `bb23fd2`*
 
 **A documentation-only milestone (no engine or result change): three pieces of background
 research locked down while preparing the paper and an advisor update. (1) The project's NICER
