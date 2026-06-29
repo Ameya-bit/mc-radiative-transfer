@@ -20,6 +20,28 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.3 — Research notes: direction, conventions, and J0030's geometry
+*2026-06-29 · commit `<pending>`*
+
+**A documentation-only milestone (no engine or result change): three pieces of background
+research locked down while preparing the paper and an advisor update. (1) The project's NICER
+comparison is *differential by design* — the forward simulation and NICER's inverse inference
+are opposite maps, and NICER publishes multiple geometries per star, so a literal PF-to-PF
+verification is ill-posed; the original task list already specified "relative changes rather
+than full parameter fitting." (2) The spot-colatitude convention (0–180° from the spin pole).
+(3) J0030's geometry is confirmed non-dipolar (Riley/Miller/Bilous 2019) but otherwise
+unexplained — and adopted as a fixed input regardless.**
+
+These consolidate the conventions and citations the paper leans on without changing any
+computation: the angle/coordinate conventions and the Bilous 2019 + Riley/Miller geometry
+quotes now live in [`docs/references.md`](docs/references.md), and the forward-vs-inverse
+reconciliation is written up in the deep dive.
+
+📐 **Full derivation:** [v0.9.3 — Research Notes](docs/deep-dives/v0.9.3-research-notes.md)
+
+**Next:** v1.0.0 — the paper; the geometry phase diagram that turns the J0030/J0740 anchors
+into a general tiling / PF-saturation rule is the headline figure in progress.
+
 ### v0.9.2 — At a second real star, the systematic lands in the pulsed fraction
 *2026-06-24 · commit `474d470`*
 

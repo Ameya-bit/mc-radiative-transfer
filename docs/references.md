@@ -9,6 +9,9 @@
 > Beloborodov 2006 MNRAS 373 836; Bogdanov 2019 ApJL 887 L26; Riley 2019 ApJL 887
 > L21; Miller 2019 ApJL 887 L24). When you add a source, include a stable link
 > (ADS bibcode or DOI) and note which version first used it.
+>
+> Bilous 2019 ApJL 887 L23 (DOI 10.3847/2041-8213/ab53e7; arXiv:1912.05704) added and
+> verified against IOP/ADS on 2026-06-29.
 
 ---
 
@@ -69,6 +72,37 @@ MNRAS, 373, 836. [DOI: 10.1111/j.1365-2966.2006.11088.x](https://doi.org/10.1111
 
 ---
 
+## Angle & coordinate conventions
+
+The pulse-profile geometry uses several angles that are easy to conflate; this is the
+single place they are pinned down. Two of them are **colatitudes** — polar angles measured
+from the rotation/spin pole, spanning **0–180°** (90° = equator), *not* 0–90° (that is
+latitude; colatitude = 90° − latitude):
+
+| Quantity | Symbol | Meaning | Papers' name | In code |
+|---|---|---|---|---|
+| Spot colatitude | θ_s | position of a spot centre, from the spin pole | Θ (Riley), θc (Bogdanov) | `Spot.colatitude` |
+| Observer inclination | i | the observer's own colatitude (line-of-sight angle from the spin pole) | θ_obs (Miller) | `Anchor.inclination` |
+
+Both run 0–180°: Miller's fit places the spot-centre **prior** at **0.1–3.1 rad**
+(≈ 6°–178°), i.e. essentially pole-to-pole — which is what lets a single number say a spot
+sits in the far ("southern") hemisphere (θ > 90°), the defining feature of J0030's geometry.
+
+The remaining angles are **not** colatitudes and should not be read as positions:
+- **ψ** — angle between a spot's normal and the line of sight (`cos_psi`); 0–180°, and it
+  legitimately exceeds 90° via light bending ("seeing around the back").
+- **α**, **μ = cos α** — the local *emission* angle from the surface normal; the beaming
+  variable (`PulseProfile.cos_alpha`), not a stellar position.
+- **azimuth / longitude** (φ₀) and **phase** (φ) — measured *around* the spin axis
+  (azimuthal), not from it (`Spot.azimuth`, in cycles).
+
+One cross-literature collision to watch: **ζ** is a spot's **angular radius** (a size) in
+Riley/Bogdanov (e.g. J0740 ζp = 0.147 rad, used only inside the area weighting sin²ζ), but in
+the broader pulsar-magnetosphere literature ζ often denotes the **observer viewing angle**.
+Confirm which is meant when reading outside the NICER papers.
+
+---
+
 ## NICER pulse-profile modeling & code comparison (the benchmarks)
 
 ### Bogdanov et al. (2019) — "Paper II", L26
@@ -89,6 +123,15 @@ ST+PST model, Table 2):** M = 1.34 M⊙, R_eq = 12.71 km (compactness GM/Rc² = 
 u = 0.312); inclination i = 0.94 rad (53.9°); ST spot colatitude Θp = 2.23 rad (127.8°),
 PST crescent Θs = 2.91 rad (166.7°); both in the same hemisphere, azimuthal separation
 ≈ 0.45 cyc. The two spots are equal-temperature (log₁₀T = 6.11).
+> **Why the geometry is non-antipodal (Riley et al. 2019, discussion):** "the inferred
+> configuration has both hot regions in the same rotational hemisphere, with one hot
+> region being a small spot and the other an azimuthally extended narrow crescent.
+> Models wherein the hot regions are antipodal are strongly disfavored, implying a
+> complex offset dipolar and multipolar field structure that, if accurate, has major
+> implications for both pulsar emission and stellar evolution." This is the
+> astrophysical *cause* of the same-hemisphere geometry that v0.9.1 finds
+> eclipse-saturates — a centered dipole would force the 127.8° cap's partner to ~52.2°,
+> not the observed 166.7°.
 *Used in:* v0.9.1 (real-star anchor — `scripts/j0030_anchor.py`).
 
 ### Miller et al. (2019) — J0030, L24
@@ -100,7 +143,46 @@ GM/Rc² = 0.163 ⇒ u = 0.326); observer θobs = 0.878 rad (50.3°); two main sp
 colatitudes θc1 = 2.270 rad (130.0°), θc2 = 2.417 rad (138.5°), longitude separation
 Δφ2 = 0.460 cyc, oval sizes Δθ·f and temperatures kT ≈ 0.115–0.117 keV (for the
 area × T⁴ weighting); the third spot is negligible and dropped.
+> **Independent corroboration (Miller et al. 2019, discussion):** the hot spots all sit
+> in the "southern" rotational hemisphere (their convention: the "northern" hemisphere
+> is the one containing the line of sight) and "suggest that the magnetic field of
+> PSR J0030+0451 is at least an offset dipole, and may have higher moments that dominate
+> the field strength near the stellar surface" — consistent with the complex fields
+> inferred for other millisecond rotation-powered pulsars and for the accretion-powered
+> MSPs thought to be their progenitors. Two teams, two codes, same dipole-defying result.
 *Used in:* v0.9.1 (real-star anchor — `scripts/j0030_anchor.py`).
+
+### Bilous et al. (2019) — J0030, L23
+ApJL, 887, L23. [DOI: 10.3847/2041-8213/ab53e7](https://doi.org/10.3847/2041-8213/ab53e7) ·
+[ADS: 2019ApJ...887L..23B](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..23B) ·
+[arXiv:1912.05704](https://arxiv.org/abs/1912.05704) — Companion to R19/M19 that tests
+J0030's inferred hot-region geometry against canonical magnetic-field models. **Finding:**
+the inferred heating cannot be produced by magnetospheric return currents at open-field-line
+footpoints for *any* canonical global field — centered dipole, static, or vacuum-retarded
+(Deutsch) — so the data prefer an offset-dipolar / higher-multipole field. It confirms the
+geometry is non-dipolar but does **not** determine the actual field configuration or its
+physical origin. **Caveats (the authors' own):** the result is conditional on R19's
+simplifying assumptions — atmosphere composition/ionization, neglected smooth temperature
+gradients across the hot regions, the phenomenological hot-region shapes, and the background
+treatment.
+> "Recent modeling of NICER observations ... has indicated a strong preference for hot
+> surface regions that are seemingly impossible when confronted with canon. The heating
+> cannot be reconciled with that by magnetospheric currents at the footpoints of open field
+> lines in canonical models of global magnetic fields—be it a centered dipole, static, or
+> vacuum-retarded. The superior heating configuration inferred by R19 features two hot
+> regions whose shapes are remarkably different (a spot and a larger-scale crescent) and
+> that are located in the same rotational hemisphere. ... If not critically affected by the
+> caveats, the results of R19 open a new and interesting direction in pulsar research,
+> calling for the development of physically motivated, globally non-dipolar (or
+> offset-dipolar) magnetic field configurations for rotation-powered pulsars." (Bilous
+> et al. 2019)
+
+**Scope note.** We adopt J0030's *published geometry* as a fixed input and make no claim
+about its field configuration or origin; the beaming-swap result is differential and holds
+regardless of why the spots sit in the same hemisphere. The shape/assumption caveats above
+are inherited along with the geometry — the v0.9.1 point-spot reduction and the planned
+finite-cap robustness check (next-steps §4) bound that sensitivity.
+*Used in:* context for the v0.9.1 J0030 anchor (geometry provenance; not a computational input).
 
 ### Riley et al. (2021) — J0740+6620, L27
 ApJL, 918, L27. [DOI: 10.3847/2041-8213/ac0a81](https://doi.org/10.3847/2041-8213/ac0a81) ·
