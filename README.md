@@ -20,6 +20,36 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.4 — The geometry phase diagram: two anchors become a rule
+*2026-06-30 · commit `<pending>`*
+
+**The two real-star anchors are turned into a general rule. Sweeping the geometry plane
+(azimuthal spot separation Δφ × spot colatitude θ) and coloring by the beaming systematic
+ΔPF = PF_real − PF_iso shows where it lands across *all* two-spot geometries — and an analytic
+boundary Δφ_crit(θ) = f_ecl(θ) (the single-spot eclipse fraction) splits the plane in two:
+left of it the spots' dark windows overlap, the pulse hits zero, PF saturates, and the
+systematic hides in waveform shape; right of it the spots *tile* the rotation and the
+systematic stays live in PF. Both J0740 fits land on the tiling side (ΔPF +0.16/+0.23); both
+J0030 fits land on the saturated side (ΔPF +0.00). Tiling — not single-spot eclipse — is the
+discriminator, now as a map.**
+
+This is the paper's headline figure. The independent numerical contour where the simulated
+two-spot flux floor → 0 overlays the analytic boundary almost exactly across both panels — an
+internal check that the criterion is what the flux actually does. The map is a *slice* (the
+background fixes both spots at equal θ, the offset-dipole/multipolar regime where the result
+varies); the antipodal/centered-dipole limit is the validation case handled next, and each
+real-star marker carries its true unequal-colatitude ΔPF (reproducing v0.9.1/v0.9.2 exactly).
+No engine change — every cell is assembled from existing `compute_profile` calls via
+`scripts/anchor_lib.py`.
+
+![Two (Δφ, θ) panels at J0740-like and J0030-like spacetimes: ΔPF heatmap with the analytic tiling boundary and the numerical flux-floor contour overlaid; J0740 markers sit in the bright tiling region, J0030 markers in the black saturated region.](data/phase_diagram.png)
+
+📐 **Full derivation:** [v0.9.4 — The Geometry Phase Diagram](docs/deep-dives/v0.9.4-phase-diagram.md)
+
+**Next:** v0.9.5 — validate the map against the canonical antipodal limit (Poutanen &
+Beloborodov 2006) and position it against the closest prior work (Zhao et al. 2024), then the
+finite-cap robustness check (v0.9.6) before the v1.0.0 paper.
+
 ### v0.9.3 — Research notes: direction, conventions, and J0030's geometry
 *2026-06-29 · commit `bb23fd2`*
 

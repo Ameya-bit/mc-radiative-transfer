@@ -438,3 +438,58 @@ def test_j0740_miller_spots_eclipse_yet_combined_pulse_does_not_saturate():
     total = s1 + np.roll(s2, int(round(J0740M_AZIMUTH_SEPARATION * 1024)))
     assert total.min() > 0.0                          # but the tiled sum stays off zero
     assert pulsed_fraction(total) < 1.0               # so PF is not saturated
+
+
+# --- phase diagram: the tiling/saturation boundary (scripts/phase_diagram.py) ---
+# The headline figure draws an analytic boundary Δφ_crit(θ) = f_ecl(θ): two equal
+# anti-phased spots at colatitude θ stop touching zero (PF un-saturates) exactly
+# when their azimuthal separation exceeds the single-spot eclipse fraction. These
+# pin that boundary and the map's anchor markers to the verified core, independent
+# of the script.
+
+def test_tiling_boundary_equals_single_spot_eclipse_fraction():
+    """Δφ_crit(θ) = f_ecl(θ): the saturation boundary the phase diagram overlays.
+
+    For a partially-eclipsing single spot, two equal anti-phased copies share a dark
+    phase (combined flux → 0, PF saturates) iff their separation Δφ is below the
+    spot's own eclipse fraction; above it the dark windows clear each other and the
+    pair tiles the rotation. Checked just below (0.5×) and just above (2×) f_ecl.
+    """
+    inclination, colatitude, compactness = np.deg2rad(87.6), np.deg2rad(90.0), 0.494
+    prof = compute_profile(inclination, colatitude, compactness, n_phase=1024)
+    f_ecl = float(np.mean(~prof.visible))
+    assert 0.0 < f_ecl < 0.5                          # this geometry partially eclipses
+    n = prof.flux.size
+
+    def two_spot_floor(dphi):
+        total = prof.flux + np.roll(prof.flux, int(round(dphi * n)) % n)
+        return total.min() / total.max()
+
+    assert two_spot_floor(0.5 * f_ecl) == pytest.approx(0.0, abs=1e-12)  # overlap → 0
+    assert two_spot_floor(2.0 * f_ecl) > 1e-3                            # tiled → off 0
+
+
+def test_phase_diagram_anchor_markers_reproduce_saturated_vs_live():
+    """The map's star markers land on the right side: J0030 saturated, J0740 live.
+
+    Reconstructs each fit's two-spot ΔPF (the canonical roll-and-add) from the core
+    with a limb-darkened beaming, confirming the phase-diagram markers sit on the
+    correct side of the boundary: J0030's same-hemisphere spots give ΔPF ≈ 0
+    (saturated), J0740's tiling spots give a live ΔPF > 0.1.
+    """
+    def two_spot_delta_pf(incl, u, spots):
+        def flux(beaming):
+            total = np.zeros(1024)
+            for colat, azim in spots:
+                base = compute_profile(incl, colat, u, beaming=beaming, n_phase=1024).flux
+                total += np.roll(base, int(round(azim * 1024)) % 1024)
+            return total
+        return pulsed_fraction(flux(eddington_limb_darkening)) - pulsed_fraction(flux(None))
+
+    # J0030 Riley (same-hemisphere, eclipsing) → saturated, ΔPF ≈ 0.
+    d_j0030 = two_spot_delta_pf(0.94, 0.312, [(2.23, 0.0), (2.91, 0.45)])
+    assert abs(d_j0030) < 1e-3
+
+    # J0740 Riley (opposite-hemisphere, tiling) → live, ΔPF > 0.1.
+    d_j0740 = two_spot_delta_pf(1.5284, 0.494, [(1.35, 0.0), (1.89, 0.442)])
+    assert d_j0740 > 0.1
