@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.9.5 — Validating the phase diagram, and positioning it against the closest prior work
-*2026-06-30 · commit `<pending>`*
+*2026-06-30 · commit `92e37aa`*
 
 **The map is anchored to the canonical literature and the result is placed against its
 nearest neighbor. Two independent checks license the v0.9.4 extension: (1) the engine's
