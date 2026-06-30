@@ -20,6 +20,33 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.6 — Finite-cap robustness: the systematic survives realistic spot size
+*2026-06-30 · commit `<pending>`*
+
+**The point-spot reduction is converted from an asserted caveat into a measured bound.
+Every result so far collapses each hot spot to a point at its center colatitude — least
+accurate at grazing angles (μ → 0), exactly where J0740's spots skim the limb and limb
+darkening bites hardest. Tiling each spot into an area-weighted finite cap and re-running
+the swap shows the bias is tiny: at the published spot sizes ΔPF moves by only −0.003 (Riley
++0.164 → +0.161, Miller +0.229 → +0.226), and refining the tiling does not move it further.
+J0740 stays a live, positive PF systematic; J0030 stays saturated (ΔPF ≈ 0) even at a
+conservative ζ = 0.15 rad upper bound. Sign, size, and τ-shape all hold.**
+
+The cap tiling reduces continuously to the point spot as ζ → 0, so the finite-cap curve is
+continuous with the anchor results; the measured bias grows slowly and monotonically with
+spot size (even an exaggerated ζ = 0.2 rad only slips Riley to +0.159). The phase-diagram
+tiling/saturation *boundary* (v0.9.4) is more robust still — it is set by spot visibility,
+not the cap interior, so it does not move with ζ at all. No engine change — each sub-point is
+one `compute_profile` call, summed additively as in the anchors.
+
+![Left: ΔPF vs cap radius ζ for both J0740 fits — gently declining from the point value at ζ → 0, with the published ζ marked. Right: point vs finite-cap ΔPF per anchor — J0740 nearly unchanged and live, J0030 at zero and saturated.](data/finite_cap.png)
+
+📐 **Full derivation:** [v0.9.6 — Finite-Cap Robustness](docs/deep-dives/v0.9.6-finite-cap.md)
+
+**Next:** v1.0.0 — the paper. The four build steps are complete: the result (v0.9.0–v0.9.2),
+the phase diagram (v0.9.4), the PB06 validation + Zhao positioning (v0.9.5), and the finite-cap
+bound (v0.9.6). What remains is human literature verification and writing the note.
+
 ### v0.9.5 — Validating the phase diagram, and positioning it against the closest prior work
 *2026-06-30 · commit `92e37aa`*
 

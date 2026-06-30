@@ -566,3 +566,65 @@ def test_antipodal_pair_reproduces_pb06_visibility_classes(i_deg, th_deg, expect
         engine_class = 3 if (not prim.all() and not anti.all()) else 2
 
     assert engine_class == analytic_class == expect_class
+
+
+# --- finite-cap robustness: ΔPF survives realistic spot size (scripts/finite_cap.py) ---
+# The anchors reduce each spot to a point at its center colatitude. This pins the claim
+# that resolving the spots into area-weighted finite caps barely moves ΔPF — J0740 stays a
+# live positive PF systematic, J0030 stays saturated — independent of the script, via a
+# minimal inline cap tiler reduced from the same core (compute_profile).
+
+def _tile_cap_minimal(colat, azim, radius, n_rings=4, n_az=12):
+    """Area-weighted ring tiling of a cap; radius 0 → the single center point."""
+    if radius <= 0.0:
+        return [(colat, azim, 1.0)]
+    nc = np.array([np.sin(colat), 0.0, np.cos(colat)])
+    e_theta = np.array([np.cos(colat), 0.0, -np.sin(colat)])
+    e_phi = np.array([0.0, 1.0, 0.0])
+    edges = np.linspace(0.0, radius, n_rings + 1)
+    pts = []
+    for k in range(n_rings):
+        lo, hi = edges[k], edges[k + 1]
+        offset, area = 0.5 * (lo + hi), np.cos(lo) - np.cos(hi)
+        for j in range(n_az):
+            beta = 2.0 * np.pi * j / n_az
+            p = np.cos(offset) * nc + np.sin(offset) * (np.cos(beta) * e_theta
+                                                        + np.sin(beta) * e_phi)
+            pts.append((float(np.arccos(np.clip(p[2], -1.0, 1.0))),
+                        azim + float(np.arctan2(p[1], p[0])) / (2.0 * np.pi), area))
+    total = sum(w for *_, w in pts)
+    return [(c, a, w / total) for (c, a, w) in pts]
+
+
+@pytest.mark.parametrize("incl, u, spots, radius, expect_live", [
+    (1.5284, 0.494, [(1.35, 0.0), (1.89, 0.442)], 0.15, True),   # J0740 Riley: tiling → live
+    (0.94, 0.312, [(2.23, 0.0), (2.91, 0.45)], 0.15, False),     # J0030 Riley: eclipse → saturated
+])
+def test_finite_cap_delta_pf_tracks_point_reduction(incl, u, spots, radius, expect_live):
+    """Resolving spots into finite caps barely moves ΔPF, and the verdict is unchanged.
+
+    Compares the two-spot ΔPF at the point reduction (cap radius 0) against an
+    area-weighted finite cap (ζ = 0.15 rad). The finite-cap value must stay within a few
+    percent of the point value, and keep the star on the same side: J0740 live (ΔPF > 0.1),
+    J0030 saturated (ΔPF ≈ 0). This is the measured bound that replaces the point caveat.
+    """
+    n = 1024
+
+    def flux(radius, beaming):
+        total = np.zeros(n)
+        for colat, azim in spots:
+            for c, a, w in _tile_cap_minimal(colat, azim, radius):
+                base = compute_profile(incl, c, u, beaming=beaming, n_phase=n).flux
+                total += w * np.roll(base, int(round(a * n)) % n)
+        return total
+
+    def delta_pf(radius):
+        return (pulsed_fraction(flux(radius, eddington_limb_darkening))
+                - pulsed_fraction(flux(radius, None)))
+
+    point, finite = delta_pf(0.0), delta_pf(radius)
+    assert abs(finite - point) < 0.02            # finite-size bias is small (measured bound)
+    if expect_live:
+        assert point > 0.1 and finite > 0.1      # J0740 stays a live PF systematic
+    else:
+        assert abs(point) < 1e-3 and abs(finite) < 1e-3   # J0030 stays saturated
