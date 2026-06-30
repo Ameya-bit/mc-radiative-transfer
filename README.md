@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.9.6 — Finite-cap robustness: the systematic survives realistic spot size
-*2026-06-30 · commit `<pending>`*
+*2026-06-30 · commit `14022da`*
 
 **The point-spot reduction is converted from an asserted caveat into a measured bound.
 Every result so far collapses each hot spot to a point at its center colatitude — least
