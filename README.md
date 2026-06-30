@@ -21,7 +21,7 @@ and the technical details tucked underneath, plus a link to its deep dive. The 1
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
 ### v0.9.4 — The geometry phase diagram: two anchors become a rule
-*2026-06-30 · commit `<pending>`*
+*2026-06-30 · commit `8551023`*
 
 **The two real-star anchors are turned into a general rule. Sweeping the geometry plane
 (azimuthal spot separation Δφ × spot colatitude θ) and coloring by the beaming systematic
