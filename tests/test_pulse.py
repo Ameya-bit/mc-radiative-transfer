@@ -493,3 +493,76 @@ def test_phase_diagram_anchor_markers_reproduce_saturated_vs_live():
     # J0740 Riley (opposite-hemisphere, tiling) → live, ΔPF > 0.1.
     d_j0740 = two_spot_delta_pf(1.5284, 0.494, [(1.35, 0.0), (1.89, 0.442)])
     assert d_j0740 > 0.1
+
+
+# --- validation: Beloborodov eclipse onset + PB06 antipodal map (scripts/validate_phase_diagram.py) ---
+# The validation figure reproduces the canonical antipodal visibility classification
+# (Poutanen & Beloborodov 2006, Fig. 5) with the same engine. These pin its two
+# load-bearing claims to the core, independent of the script: the single-spot eclipse
+# onset sits exactly at Beloborodov's visibility threshold, and the engine's antipodal
+# visibility classes match the closed-form geometry — class by class.
+
+@pytest.mark.parametrize("i_deg, th_deg, u, expect_eclipse", [
+    (87.6, 77.0, 0.494, False),   # J0740-like: compact, grazing — never sets
+    (54.0, 167.0, 0.31, True),    # J0030-like: far-hemisphere spot — eclipses
+    (20.0, 20.0, 0.20, False),    # near pole, modest bending — visible all rotation
+    (80.0, 160.0, 0.20, True),    # far spot, low bending — eclipses
+])
+def test_single_spot_eclipse_onset_matches_beloborodov(i_deg, th_deg, u, expect_eclipse):
+    """The engine's eclipse flips exactly at Beloborodov's cos(i+θ) = −u/(1−u).
+
+    The farthest phase (φ = π) has cos ψ = cos(i+θ); the spot sets there precisely
+    when that minimum drops below the bending visibility threshold −u/(1−u). The
+    engine (via its visibility mask) must agree with this closed-form condition.
+    """
+    incl, theta = np.deg2rad(i_deg), np.deg2rad(th_deg)
+    prof = compute_profile(incl, theta, u, n_phase=2048)
+    engine_eclipses = bool((~prof.visible).any())
+    analytic_eclipses = bool(np.cos(incl + theta) < visibility_threshold(u))
+    assert engine_eclipses == analytic_eclipses == expect_eclipse
+
+
+@pytest.mark.parametrize("i_deg, th_deg, expect_class", [
+    (60.0, 90.0, 4),   # IV  · both spots visible all rotation
+    (78.0, 100.0, 2),  # II  · one spot always visible, the antipode eclipses
+    (88.0, 88.0, 3),   # III · each eclipses for part, never both gone at once
+    (5.0, 5.0, 1),     # I   · only one spot ever visible (the antipode never rises)
+])
+def test_antipodal_pair_reproduces_pb06_visibility_classes(i_deg, th_deg, expect_class):
+    """Engine antipodal visibility class = closed-form PB06 class, across all four.
+
+    For an antipodal pair cos ψ₂ = −cos ψ₁, so the primary's cos ψ ∈ [cos(i+θ),
+    cos(i−θ)] relative to the both-visible band [−c, c] (c = u/(1−u)) fixes the PB06
+    class analytically. The engine's class — counting visible spots per phase from
+    its own visibility masks — must match it for a representative cell of each class.
+    """
+    u = 0.494
+    c = u / (1.0 - u)
+    n = 2048
+    incl, theta = np.deg2rad(i_deg), np.deg2rad(th_deg)
+
+    # Closed-form PB06 class from the cos ψ range vs the both-visible band.
+    m, big_m = float(np.cos(incl + theta)), float(np.cos(incl - theta))
+    p_always, p_never = m >= -c, big_m < -c
+    s_always, s_never = big_m <= c, m > c
+    if p_always and s_always:
+        analytic_class = 4
+    elif (not p_always and not p_never) and (not s_always and not s_never):
+        analytic_class = 3
+    elif (p_always and s_never) or (s_always and p_never):
+        analytic_class = 1
+    else:
+        analytic_class = 2
+
+    # Engine class from the per-phase count of visible antipodal spots.
+    prim = compute_profile(incl, theta, u, n_phase=n).visible
+    anti = np.roll(compute_profile(incl, np.pi - theta, u, n_phase=n).visible, n // 2)
+    n_vis = prim.astype(int) + anti.astype(int)
+    if n_vis.min() == 2:
+        engine_class = 4
+    elif n_vis.max() == 1:
+        engine_class = 1
+    else:
+        engine_class = 3 if (not prim.all() and not anti.all()) else 2
+
+    assert engine_class == analytic_class == expect_class

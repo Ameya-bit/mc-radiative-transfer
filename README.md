@@ -20,6 +20,33 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.5 — Validating the phase diagram, and positioning it against the closest prior work
+*2026-06-30 · commit `<pending>`*
+
+**The map is anchored to the canonical literature and the result is placed against its
+nearest neighbor. Two independent checks license the v0.9.4 extension: (1) the engine's
+single-spot eclipse onset matches Beloborodov's visibility condition cos(i+θ) < −u/(1−u)
+across the whole (i, θ, u) grid (0 mismatches), and (2) collapsed to the antipodal limit,
+the engine reproduces the Poutanen & Beloborodov (2006) Fig. 5 visibility classes I–IV
+exactly — the analytic and engine class maps are identical, all four classes present. Then
+the closest prior work, Zhao, Psaltis & Özel (2024), is met head-on: on their own antipodal
+geometry we add the three layers they omit — pulsed fraction, a swept azimuthal separation,
+and the tiling reading.**
+
+Reproducing the canonical map in the limit where it is established is what earns trust in
+the non-antipodal, equal-colatitude slice that is the novel result. Zhao route the same
+wrong-beaming systematic into inferred *radius* via the Fourier amplitude A₁/A₀, with the two
+spots fixed antipodal and no tiling criterion (confirmed against both papers' full text);
+pulsed fraction and azimuthal separation are exactly the axes they never use. No engine
+change — every check is assembled from the verified core.
+
+![Three panels: the analytic PB06 antipodal visibility-class map, the same map computed from the engine (identical), and the Zhao geometry extended to ΔPF as a function of azimuthal separation.](data/validate_phase_diagram.png)
+
+📐 **Full derivation:** [v0.9.5 — Validating the Map and Positioning It Against Zhao](docs/deep-dives/v0.9.5-validation-positioning.md)
+
+**Next:** v0.9.6 — the finite-cap robustness check (does ΔPF ≈ +0.16 survive realistic spot
+size, not just point spots?), then the v1.0.0 paper.
+
 ### v0.9.4 — The geometry phase diagram: two anchors become a rule
 *2026-06-30 · commit `8551023`*
 
