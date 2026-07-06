@@ -43,6 +43,18 @@ while the H compared against is the *scalar isotropic* (p=1) solution
 shapes agree closely but are not strictly the same physics. A clean apples-to-
 apples fix is an isotropic-scattering mode that should reproduce scalar H(μ) to
 within noise.
+> **Paper note — the percentage error to state explicitly.** Benchmarking the Thomson
+> engine against the *isotropic*-scattering H(μ) carries a small, percent-level error
+> in the reference limb-darkening *shape*: the two phase functions produce slightly
+> different emergent I(μ). The magnitude is currently **unquantified** — treat it as a
+> percent-level estimate, not a sourced number — so the paper must **not** claim an
+> "exact" match to Chandrasekhar without this caveat. To pin it down before publication,
+> either (a) run the engine in an isotropic-scattering mode and difference the thick-slab
+> I(μ) against scalar H(μ) — this measures the error directly for our exact finite-slab
+> setup — or (b) compare against Chandrasekhar's exact Rayleigh law of darkening (Ch. X).
+> Note: the *larger* Thomson-vs-isotropic effect is the ~11.7% limb polarization
+> (Chandrasekhar–Sobolev), but that does **not** enter our intensity-only beaming curve
+> I(μ), so it is irrelevant to the beaming result — mention it only to pre-empt the question.
 (2) **finite vs. semi-infinite** — H is the τ→∞ limit, so finite slabs (τ≲1)
 deviate; the rigorous finite-τ benchmark is Chandrasekhar's **X- and Y-functions**.
 *Used in:* v0.5.1, v0.6.0–v0.6.1 (`src/mcrt/theory.py`, beaming validation).
