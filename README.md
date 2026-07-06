@@ -20,6 +20,37 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.7 — The convergence redo: escaped photons are the currency
+*2026-07-06 · commit `<pending>`*
+
+**The library's 200k-photons-per-τ setting is replaced by a measured, per-τ photon budget —
+and the paper's headline systematic survives full statistical scrutiny. The v0.7.0 study had
+validated 200k for one observable at one τ; re-running convergence at every library τ, with
+ΔPF itself as a tracked observable, shows the real statistical currency is *escaped* photons
+(escape fraction falls 92% → 4.2% from τ = 0.1 to 30, so "uniform" 200k injected hid a 22×
+statistics disparity). Three verdicts: the library's b(τ) dip at τ = 30 was noise — b(τ)
+rises monotonically to a plateau (1.774 ± 0.053 at τ = 10 vs 1.756 ± 0.079 at τ = 30), so
+`SHAPE_TAU = 10`'s "peak" justification must be reworded; ΔPF converges to +0.1486 ± 0.0026
+(Riley J0740, τ = 10) — ~50σ above seed scatter, emphatically not Monte Carlo noise, though
+the current +0.16 sits ~1σ high and should settle near +0.15 after the re-run; and low-N
+ΔPF is *biased high* (converges from above), a bias error bars alone would never reveal.**
+
+The sweep: 370 runs, 77.6M photons, all six τ, 10 seeds at small N, per-task `SeedSequence`
+streams, process-parallel on 16 workers (27.5 min wall, no engine change). Error-vs-escaped
+curves collapse across τ onto the N⁻¹ᐟ² line, so one calibration converts to an injected
+budget per τ. Production recommendation: **4×10⁵ escaped photons per (τ, seed) × 5 seeds**
+(≈ 80M injected total, ~43–120× current statistics per row), which meets every target —
+σ(b) ≤ 0.02, tail bin ≤ 2%, σ(ΔPF) ≤ 0.01 pooled — and demotes tail-bin importance sampling
+to future work.
+
+![ΔPF vs escaped photons per τ — means converging from above toward the smooth ΔPF(τ) saturation curve, error bars collapsing as N⁻¹ᐟ²](data/convergence_v2_dpf.png)
+
+📐 **Full derivation:** [v0.9.7 — The Convergence Redo](docs/deep-dives/v0.9.7-convergence-redo.md)
+
+**Next:** the production library re-run — escape-matched `tau_sweep.py` with per-seed streams
+and stored error bars, anchors re-run per seed to quote ΔPF ± σ for both J0740 fits, then
+v1.0.0 — the paper.
+
 ### v0.9.6 — Finite-cap robustness: the systematic survives realistic spot size
 *2026-06-30 · commit `14022da`*
 
