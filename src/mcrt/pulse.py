@@ -16,6 +16,9 @@ upstream in the beaming library):
    The Jacobian ``d(cos α)/d(cos ψ) = (1 − u)`` is constant — that is what makes
    the map cheap and the verification clean. Because the map shifts cos ψ upward,
    the spot stays visible (cos α ≥ 0) for some ψ > 90°: we "see around the back".
+   Passing ``bending=`` an :class:`mcrt.bending.ExactBending` swaps this linear
+   map for the exact Schwarzschild ray integral (map *and* Jacobian); the linear
+   default is the untouched, verified path.
 3. **Beaming.** The local surface brightness ``I(μ)`` at emission cosine
    ``μ = cos α``. The default here is **isotropic** (``I ≡ 1``); the
    isotropic-vs-realistic comparison swaps in the scattering beaming function ``I(μ; τ)`` from
@@ -25,8 +28,10 @@ upstream in the beaming library):
 
 The proportional (slow-rotation) bolometric flux from a point spot is
 
-    F(φ) ∝ (1 − u) · I(cos α) · cos α      where visible, else 0
+    F(φ) ∝ D · I(cos α) · cos α      where visible, else 0
 
+with lensing Jacobian ``D = d(cos α)/d(cos ψ)``: the constant ``(1 − u)`` for the
+linear map, or the phase-dependent ``ExactBending.jacobian`` for the exact one
 (see Poutanen & Beloborodov 2006 for the full expression). Fluxes are returned in
 arbitrary units — only ratios (the pulse shape and PF) are physical.
 
@@ -43,6 +48,9 @@ import numpy as np
 # Defined in `beaming` (the dependency-free module that builds these curves) and
 # reused here so the type has one home.
 from .beaming import BeamingFunc
+
+# The exact light-bending map (optional; the linear `bend` below is the default).
+from .bending import ExactBending
 
 
 class PulseProfile(NamedTuple):
@@ -92,26 +100,51 @@ def visibility_threshold(compactness: float) -> float:
     return -compactness / (1.0 - compactness)
 
 
+def _bend_and_jacobian(cos_psi_vals, compactness: float, bending: Optional[ExactBending]):
+    """(cos α, lensing Jacobian D) at each cos ψ, for the linear or exact map.
+
+    ``bending=None`` uses Beloborodov's linear map (constant ``D = 1 − u``); an
+    :class:`mcrt.bending.ExactBending` supplies the exact map and its phase-varying
+    ``D``. Guards a compactness mismatch — an exact map built for a different ``u``
+    than the flux is being computed at would silently corrupt the geometry.
+    """
+    if bending is None:
+        cos_a = bend(cos_psi_vals, compactness)
+        return cos_a, 1.0 - compactness
+    if not np.isclose(bending.compactness, compactness):
+        raise ValueError(
+            f"bending map built for u = {bending.compactness} but flux requested "
+            f"at u = {compactness}; build ExactBending with the matching compactness"
+        )
+    cos_a = bending.cos_alpha(cos_psi_vals)
+    return cos_a, bending.jacobian(cos_psi_vals)
+
+
 def point_spot_flux(
     phase,
     inclination: float,
     colatitude: float,
     compactness: float,
     beaming: Optional[BeamingFunc] = None,
+    bending: Optional[ExactBending] = None,
 ) -> np.ndarray:
     """Proportional bolometric flux F(φ) from a point spot, zero where it has set.
 
-    ``F(φ) ∝ (1 − u) · I(cos α) · cos α`` for visible phases, else 0. ``beaming``
-    is the surface brightness law ``I(μ)`` evaluated at ``μ = cos α``; ``None``
-    means isotropic (``I ≡ 1``). The geometry is identical regardless of
-    ``beaming`` — passing the library's ``I(μ; τ)`` is the only change the
+    ``F(φ) ∝ D · I(cos α) · cos α`` for visible phases, else 0. ``beaming`` is the
+    surface brightness law ``I(μ)`` evaluated at ``μ = cos α``; ``None`` means
+    isotropic (``I ≡ 1``). ``bending`` selects the light-bending map: ``None`` is
+    Beloborodov's linear default (``D = 1 − u``); an
+    :class:`mcrt.bending.ExactBending` instance uses the exact Schwarzschild map
+    and its Jacobian. The geometry is identical across ``beaming`` for a fixed
+    ``bending`` — passing the library's ``I(μ; τ)`` is the only change the
     realistic-beaming comparison makes.
     """
-    cos_a = bend(cos_psi(phase, inclination, colatitude), compactness)
+    cos_a, jacobian = _bend_and_jacobian(
+        cos_psi(phase, inclination, colatitude), compactness, bending)
     visible = cos_a >= 0.0
 
     intensity = np.ones_like(cos_a) if beaming is None else np.asarray(beaming(cos_a), dtype=float)
-    flux = (1.0 - compactness) * intensity * cos_a
+    flux = jacobian * intensity * cos_a
     return np.where(visible, flux, 0.0)
 
 
@@ -121,18 +154,22 @@ def compute_profile(
     compactness: float,
     beaming: Optional[BeamingFunc] = None,
     n_phase: int = 1024,
+    bending: Optional[ExactBending] = None,
 ) -> PulseProfile:
     """Sample one full rotation onto a uniform phase grid.
 
     ``n_phase`` phases on [0, 2π) (endpoint excluded so φ = 0 and, for even
     ``n_phase``, φ = π land exactly on grid points — the flux extremes for an
-    isotropic spot). Returns a :class:`PulseProfile` bundling phase, flux,
-    cos α, and the visibility mask for plotting and downstream sweeps.
+    isotropic spot). ``bending`` selects the linear (``None``) or exact
+    (:class:`mcrt.bending.ExactBending`) light-bending map. Returns a
+    :class:`PulseProfile` bundling phase, flux, cos α, and the visibility mask for
+    plotting and downstream sweeps.
     """
     phase = np.linspace(0.0, 2.0 * np.pi, n_phase, endpoint=False)
-    cos_a = bend(cos_psi(phase, inclination, colatitude), compactness)
+    cos_a, _ = _bend_and_jacobian(
+        cos_psi(phase, inclination, colatitude), compactness, bending)
     visible = cos_a >= 0.0
-    flux = point_spot_flux(phase, inclination, colatitude, compactness, beaming)
+    flux = point_spot_flux(phase, inclination, colatitude, compactness, beaming, bending)
     return PulseProfile(phase=phase, flux=flux, cos_alpha=cos_a, visible=visible)
 
 

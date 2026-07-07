@@ -6,6 +6,7 @@ from .beaming import (
     fit_limb_darkening,
     fit_limb_darkening_slope,
 )
+from .bending import ExactBending, bend_exact, deflection_angle
 from .convergence import (
     find_knee,
     loglog_slope,
@@ -32,15 +33,18 @@ from .utils import (
 )
 
 __all__ = [
+    "ExactBending",
     "Photon",
     "PulseProfile",
     "Simulation",
     "analytic_isotropic_pf",
     "beaming_lookup",
     "bend",
+    "bend_exact",
     "chandrasekhar_h",
     "compute_profile",
     "cos_psi",
+    "deflection_angle",
     "eddington_limb_darkening",
     "extract_intensity",
     "find_knee",
