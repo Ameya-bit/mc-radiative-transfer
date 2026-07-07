@@ -53,46 +53,63 @@ class Anchor(NamedTuple):
     note: str             # weighting provenance / caveat
 
 
-def multi_spot_flux(inclination, compactness, spots, beaming, n_phase=N_PHASE):
+def multi_spot_flux(inclination, compactness, spots, beaming, n_phase=N_PHASE,
+                    bending=None):
     """Weighted sum of point-spot fluxes; azimuth = integer phase roll.
 
     Light is additive, so the observed flux is the weighted sum of each spot's
     single-spot profile. A spot at longitude φ₀ produces the φ₀-shifted profile,
     which on a uniform full-cycle grid is ``np.roll`` by round(φ₀·n_phase). The
     same ``beaming`` is handed to every spot, so swapping it is the only change.
+
+    ``bending`` selects the light-bending map, matching ``mcrt.compute_profile``:
+    ``None`` (default) is Beloborodov's linear map — **bit-for-bit unchanged** from
+    every prior anchor run — and an :class:`mcrt.bending.ExactBending` instance uses
+    the exact Schwarzschild map (Track B2). It is handed identically to every spot,
+    so exact-vs-linear is the only difference for a fixed geometry and ``beaming``.
     """
     total = np.zeros(n_phase)
     for spot in spots:
         prof = compute_profile(inclination, spot.colatitude, compactness,
-                               beaming=beaming, n_phase=n_phase)
+                               beaming=beaming, n_phase=n_phase, bending=bending)
         shift = int(round(spot.azimuth * n_phase)) % n_phase
         total += spot.weight * np.roll(prof.flux, shift)
     return total
 
 
 def single_spot_eclipsed_fraction(inclination, colatitude, compactness,
-                                  n_phase=N_PHASE):
+                                  n_phase=N_PHASE, bending=None):
     """Fraction of the rotation a *single* point spot spends below the horizon.
 
     Zero means the spot stays visible all rotation (J0740): then F_min > 0 and
     the pulsed fraction is unsaturated, so it can register the beaming swap. A
     large value (J0030) forces F_min = 0, pinning PF = 1 for every beaming and
     flattening the pulsed-fraction systematic to ΔPF ≈ 0.
+
+    ``bending`` selects the light-bending map (``None`` = linear default; an
+    :class:`mcrt.bending.ExactBending` uses the exact Schwarzschild horizon) so
+    the visibility diagnostics match whatever map the flux is computed with.
     """
-    prof = compute_profile(inclination, colatitude, compactness, n_phase=n_phase)
+    prof = compute_profile(inclination, colatitude, compactness, n_phase=n_phase,
+                           bending=bending)
     return float(np.mean(~prof.visible))
 
 
 def single_spot_min_visible_mu(inclination, colatitude, compactness,
-                               n_phase=N_PHASE):
+                               n_phase=N_PHASE, bending=None):
     """Smallest emission angle μ = cos α a *visible* single spot reaches.
 
     For a non-eclipsing but grazing geometry (J0740) this is the tiny but
     positive μ at the faint phase — the spot skims the limb without setting,
     which is why F_min is small yet non-zero. Returns ``nan`` if the spot is
     fully eclipsed at every phase (it never happens for the anchors used here).
+
+    ``bending`` selects the light-bending map (``None`` = linear default; an
+    :class:`mcrt.bending.ExactBending` uses the exact Schwarzschild map), keeping
+    the grazing μ_min consistent with the flux's bending choice.
     """
-    prof = compute_profile(inclination, colatitude, compactness, n_phase=n_phase)
+    prof = compute_profile(inclination, colatitude, compactness, n_phase=n_phase,
+                           bending=bending)
     if not np.any(prof.visible):
         return float("nan")
     return float(prof.cos_alpha[prof.visible].min())

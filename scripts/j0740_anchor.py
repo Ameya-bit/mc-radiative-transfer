@@ -52,7 +52,7 @@ Run from the repository root:  python scripts/j0740_anchor.py
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mcrt import beaming_lookup, pulsed_fraction
+from mcrt import ExactBending, beaming_lookup, pulsed_fraction
 from anchor_lib import (
     BACKGROUND_FRACS,
     N_PHASE,
@@ -123,15 +123,22 @@ MILLER = Anchor(
 ANCHORS = (RILEY, MILLER)
 
 
-def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
+def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau, bending=None):
     """ΔPF(τ) (the headline) plus the visibility numbers that explain its size.
 
     Both J0740 anchors keep PF unsaturated — Riley because no spot sets, Miller because
     the anti-phased spots tile the cycle even though each center dips behind ~21% of the
     time — so ΔPF is a live pulsed-fraction signal for both. The eclipse fraction and
     flux floor returned alongside it are what make that statement checkable.
+
+    ``bending`` selects the light-bending map: ``None`` is Beloborodov's linear default
+    (used by the ``a3_seed_errors`` linear cross-check against the v0.9.7 convergence
+    study); the standalone :func:`run` passes an :class:`mcrt.bending.ExactBending` per
+    anchor, because Gate G1 (v0.9.9.1) switched the J0740 anchors to exact Schwarzschild
+    bending — the −0.0066 (2.1σ) linear bias at u = 0.494 exceeds the seed error bar.
     """
-    iso = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, None)
+    iso = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, None,
+                        bending=bending)
     pf_iso = pulsed_fraction(iso)
 
     n_tau = len(tau_values)
@@ -142,7 +149,8 @@ def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
     real_at_shape_tau = None
     for ti in range(n_tau):
         beaming = beaming_lookup(mu_centers, intensity_by_tau[ti])
-        real = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, beaming)
+        real = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots,
+                             beaming, bending=bending)
         pf_real[ti] = pulsed_fraction(real)
         delta_pf[ti] = pf_real[ti] - pf_iso
         shape_rms[ti], _ = waveform_shape_change(iso, real)
@@ -151,9 +159,11 @@ def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau):
 
     # Per-spot visibility: eclipse fraction (0 ⇒ never sets) and the grazing μ_min.
     eclipse = [single_spot_eclipsed_fraction(anchor.inclination, s.colatitude,
-                                             anchor.compactness) for s in anchor.spots]
+                                             anchor.compactness, bending=bending)
+               for s in anchor.spots]
     min_mu = [single_spot_min_visible_mu(anchor.inclination, s.colatitude,
-                                         anchor.compactness) for s in anchor.spots]
+                                         anchor.compactness, bending=bending)
+              for s in anchor.spots]
 
     return {
         "pf_iso": pf_iso,
@@ -276,9 +286,17 @@ def print_summary(tau_values, results):
 
 
 def run():
+    """Standalone run — **exact Schwarzschild bending** (Gate G1, v0.9.9.1).
+
+    Each anchor gets its own :class:`mcrt.bending.ExactBending(u)`; the linear
+    map is retained only in ``a3_seed_errors`` as the convergence cross-check.
+    """
     tau_values, mu_centers, intensity_by_tau = load_library()
-    results = {a.label: sweep_anchor(a, tau_values, mu_centers, intensity_by_tau)
-               for a in ANCHORS}
+    results = {}
+    for a in ANCHORS:
+        bending = ExactBending(a.compactness)
+        results[a.label] = sweep_anchor(a, tau_values, mu_centers,
+                                        intensity_by_tau, bending=bending)
     return tau_values, results
 
 

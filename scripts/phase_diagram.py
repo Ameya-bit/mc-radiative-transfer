@@ -67,7 +67,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 
-from mcrt import beaming_lookup, compute_profile, pulsed_fraction
+from mcrt import ExactBending, beaming_lookup, compute_profile, pulsed_fraction
 from anchor_lib import (
     N_PHASE,
     SHAPE_TAU,
@@ -166,9 +166,18 @@ def star_marker(anchor, beaming_shape):
     inclination, and compactness — not the canonical equal-θ cell — so the marker
     reports the real result regardless of how well the fit matches the canonical
     pair (it does not, exactly, for equator-straddling Riley J0740).
+
+    The marker's ΔPF uses **exact Schwarzschild bending** (Gate G1, v0.9.9.1): the
+    per-star result is the quantitative number the paper cites, so it carries the
+    bending correction. The broad heatmap behind it stays on the linear map for
+    cost (stated tolerance: the exact−linear ΔPF gap is ≤ 0.007 at the u = 0.49
+    compact panel, smaller elsewhere — far below the marker/boundary resolution).
     """
-    iso = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, None)
-    real = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, beaming_shape)
+    bending = ExactBending(anchor.compactness)
+    iso = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots, None,
+                        bending=bending)
+    real = two_spot_flux(anchor.inclination, anchor.compactness, anchor.spots,
+                         beaming_shape, bending=bending)
     # Fold the separation into [0, 0.5]: a pair at Δφ and at 1−Δφ are mirror images
     # with identical PF, and the sweep axis only spans the non-redundant half. Without
     # this, Miller J0740 (Δφ = 0.56) would silently fall off the right edge of the map.

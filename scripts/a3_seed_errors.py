@@ -12,6 +12,14 @@ single seed's ``intensity_by_tau_seed[:, si, :]`` slice already has the
 (n_tau, n_bins) shape those functions expect. The pooled-curve result is quoted
 alongside as the central value.
 
+This driver stays on the **linear** Beloborodov map on purpose: its gate compares
+Riley ΔPF(τ=10) against the v0.9.7 convergence study (+0.1486), which was itself
+computed with linear bending, so the check is only meaningful linear-vs-linear. As
+of Gate G1 (v0.9.9.1) the *published* J0740 headline uses exact Schwarzschild
+bending — that per-seed number (+0.137 ± 0.003 Riley / +0.195 ± 0.005 Miller) lives
+in ``scripts/b2_exact_bending.py``; this file remains the linear self-consistency
+cross-check and the source of the J0030 shape-RMS ± σ.
+
 Run from the repository root:  PYTHONPATH=src:scripts python3 scripts/a3_seed_errors.py
 """
 
