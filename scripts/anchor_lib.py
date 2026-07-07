@@ -54,7 +54,7 @@ class Anchor(NamedTuple):
 
 
 def multi_spot_flux(inclination, compactness, spots, beaming, n_phase=N_PHASE,
-                    bending=None):
+                    bending=None, rotation=None):
     """Weighted sum of point-spot fluxes; azimuth = integer phase roll.
 
     Light is additive, so the observed flux is the weighted sum of each spot's
@@ -67,11 +67,20 @@ def multi_spot_flux(inclination, compactness, spots, beaming, n_phase=N_PHASE,
     every prior anchor run — and an :class:`mcrt.bending.ExactBending` instance uses
     the exact Schwarzschild map (Track B2). It is handed identically to every spot,
     so exact-vs-linear is the only difference for a fixed geometry and ``beaming``.
+
+    ``rotation`` (a :class:`mcrt.rotating.Rotation`, Track C) adds the Doppler +
+    aberration layer to every spot; ``None`` (default) is the frozen slow-rotation
+    flux, bit-for-bit unchanged. Each spot's β is set from its *own* colatitude
+    (``spot_speed`` uses θ_s), and the roll places its whole — now fore-aft
+    asymmetric — pulse at the spot's longitude, so the roll-and-add stays exact.
+    Passed identically to every spot, so rotation-on-vs-off is the only difference
+    for a fixed geometry, ``beaming``, and ``bending`` (Gate G2 coupling).
     """
     total = np.zeros(n_phase)
     for spot in spots:
         prof = compute_profile(inclination, spot.colatitude, compactness,
-                               beaming=beaming, n_phase=n_phase, bending=bending)
+                               beaming=beaming, n_phase=n_phase, bending=bending,
+                               rotation=rotation)
         shift = int(round(spot.azimuth * n_phase)) % n_phase
         total += spot.weight * np.roll(prof.flux, shift)
     return total

@@ -35,6 +35,13 @@ linear map, or the phase-dependent ``ExactBending.jacobian`` for the exact one
 (see Poutanen & Beloborodov 2006 for the full expression). Fluxes are returned in
 arbitrary units — only ratios (the pulse shape and PF) are physical.
 
+An optional **fourth ingredient** — the star's rotational *velocity* — enters via
+``bending=``'s sibling ``rotation=`` (a :class:`mcrt.rotating.Rotation`): the
+special-relativistic Doppler boost and aberration of the S+D approximation
+(Bogdanov et al. 2019), which multiply the flux by ``γ(θ) δⁿ`` and sample the
+beaming at the aberrated cosine ``μ' = δ cos α``. It is off by default and the
+ν → 0 limit is bit-for-bit the frozen flux above; see `mcrt.rotating`.
+
 References:
     Beloborodov (2002), ApJ 566, L85 — the bending approximation and the analytic-check benchmark.
     Poutanen & Beloborodov (2006), MNRAS 373, 836 — the bolometric point-spot flux.
@@ -51,6 +58,12 @@ from .beaming import BeamingFunc
 
 # The exact light-bending map (optional; the linear `bend` below is the default).
 from .bending import ExactBending
+
+# The optional rotational (Doppler + aberration) layer. Off unless a `Rotation` is
+# passed; ν → 0 recovers the frozen slow-rotation flux below bit-for-bit. A
+# `Rotation.band` (BandSpectrum) swaps the bolometric δⁿ boost for the band-limited
+# blackbody weight (Track C3).
+from .rotating import Rotation, band_boost, cos_xi, doppler_factor, spot_speed
 
 
 class PulseProfile(NamedTuple):
@@ -127,24 +140,46 @@ def point_spot_flux(
     compactness: float,
     beaming: Optional[BeamingFunc] = None,
     bending: Optional[ExactBending] = None,
+    rotation: Optional[Rotation] = None,
 ) -> np.ndarray:
-    """Proportional bolometric flux F(φ) from a point spot, zero where it has set.
+    """Proportional flux F(φ) from a point spot, zero where it has set.
 
-    ``F(φ) ∝ D · I(cos α) · cos α`` for visible phases, else 0. ``beaming`` is the
-    surface brightness law ``I(μ)`` evaluated at ``μ = cos α``; ``None`` means
-    isotropic (``I ≡ 1``). ``bending`` selects the light-bending map: ``None`` is
-    Beloborodov's linear default (``D = 1 − u``); an
-    :class:`mcrt.bending.ExactBending` instance uses the exact Schwarzschild map
-    and its Jacobian. The geometry is identical across ``beaming`` for a fixed
+    Frozen (slow-rotation) form: ``F(φ) ∝ D · I(cos α) · cos α`` for visible phases,
+    else 0. ``beaming`` is the surface brightness law ``I(μ)`` evaluated at
+    ``μ = cos α``; ``None`` means isotropic (``I ≡ 1``). ``bending`` selects the
+    light-bending map: ``None`` is Beloborodov's linear default (``D = 1 − u``); an
+    :class:`mcrt.bending.ExactBending` instance uses the exact Schwarzschild map and
+    its Jacobian. The geometry is identical across ``beaming`` for a fixed
     ``bending`` — passing the library's ``I(μ; τ)`` is the only change the
     realistic-beaming comparison makes.
+
+    ``rotation`` (a :class:`mcrt.rotating.Rotation`) adds the special-relativistic
+    Doppler + aberration layer (Bogdanov et al. 2019 S+D recipe): the flux becomes
+    ``F ∝ γ(θ) · δⁿ · I(μ') · μ' · D`` with Doppler factor δ(φ), aberrated cosine
+    ``μ' = δ cos α`` (used for both the beaming lookup and the projection, via the
+    Lorentz invariant dS cosα = dS' cosα'), and n = 4 (energy) or 3 (photon) flux
+    boost. ``None`` (the default) leaves the frozen form untouched, bit-for-bit; the
+    visibility mask ``cos α ≥ 0`` is a static-frame geometric condition and is
+    unchanged by rotation (δ > 0 ⇒ μ' and cos α share sign).
     """
-    cos_a, jacobian = _bend_and_jacobian(
-        cos_psi(phase, inclination, colatitude), compactness, bending)
+    cos_psi_vals = cos_psi(phase, inclination, colatitude)
+    cos_a, jacobian = _bend_and_jacobian(cos_psi_vals, compactness, bending)
     visible = cos_a >= 0.0
 
-    intensity = np.ones_like(cos_a) if beaming is None else np.asarray(beaming(cos_a), dtype=float)
-    flux = jacobian * intensity * cos_a
+    if rotation is None:
+        mu, boost, area_weight = cos_a, 1.0, 1.0
+    else:
+        beta = spot_speed(rotation.spin_hz, rotation.radius_km, colatitude, compactness)
+        delta = doppler_factor(beta, cos_xi(phase, cos_a, cos_psi_vals, inclination))
+        mu = np.clip(delta * cos_a, -1.0, 1.0)              # μ' = cos α' (aberrated)
+        if rotation.band is None:
+            boost = delta ** rotation.flux_exponent         # δ⁴ energy / δ³ photon
+        else:                                               # band-limited blackbody
+            boost = band_boost(delta, compactness, rotation.band, rotation.photon_flux)
+        area_weight = 1.0 / np.sqrt(1.0 - beta**2)          # γ(θ): comoving-area factor
+
+    intensity = np.ones_like(cos_a) if beaming is None else np.asarray(beaming(mu), dtype=float)
+    flux = area_weight * boost * jacobian * intensity * mu
     return np.where(visible, flux, 0.0)
 
 
@@ -155,21 +190,26 @@ def compute_profile(
     beaming: Optional[BeamingFunc] = None,
     n_phase: int = 1024,
     bending: Optional[ExactBending] = None,
+    rotation: Optional[Rotation] = None,
 ) -> PulseProfile:
     """Sample one full rotation onto a uniform phase grid.
 
     ``n_phase`` phases on [0, 2π) (endpoint excluded so φ = 0 and, for even
     ``n_phase``, φ = π land exactly on grid points — the flux extremes for an
-    isotropic spot). ``bending`` selects the linear (``None``) or exact
-    (:class:`mcrt.bending.ExactBending`) light-bending map. Returns a
-    :class:`PulseProfile` bundling phase, flux, cos α, and the visibility mask for
-    plotting and downstream sweeps.
+    isotropic, non-rotating spot). ``bending`` selects the linear (``None``) or exact
+    (:class:`mcrt.bending.ExactBending`) light-bending map; ``rotation`` (a
+    :class:`mcrt.rotating.Rotation`) adds the Doppler + aberration layer to the flux
+    (``None`` = frozen slow-rotation). Returns a :class:`PulseProfile` bundling
+    phase, flux, cos α, and the visibility mask. ``cos_alpha`` is the *static-frame*
+    geometric emission cosine (unchanged by rotation — the aberrated μ' lives inside
+    the flux only), so the geometry stays a controlled constant across beaming and
+    rotation swaps.
     """
     phase = np.linspace(0.0, 2.0 * np.pi, n_phase, endpoint=False)
     cos_a, _ = _bend_and_jacobian(
         cos_psi(phase, inclination, colatitude), compactness, bending)
     visible = cos_a >= 0.0
-    flux = point_spot_flux(phase, inclination, colatitude, compactness, beaming, bending)
+    flux = point_spot_flux(phase, inclination, colatitude, compactness, beaming, bending, rotation)
     return PulseProfile(phase=phase, flux=flux, cos_alpha=cos_a, visible=visible)
 
 

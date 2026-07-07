@@ -24,6 +24,16 @@ from .pulse import (
     pulsed_fraction,
     visibility_threshold,
 )
+from .rotating import (
+    BandSpectrum,
+    Rotation,
+    band_boost,
+    cos_xi,
+    doppler_factor,
+    lorentz_gamma,
+    spot_speed,
+    travel_time_delay,
+)
 from .theory import chandrasekhar_h, eddington_limb_darkening
 from .utils import (
     get_random_direction,
@@ -33,19 +43,25 @@ from .utils import (
 )
 
 __all__ = [
+    "BandSpectrum",
     "ExactBending",
     "Photon",
     "PulseProfile",
+    "Rotation",
     "Simulation",
     "analytic_isotropic_pf",
+    "band_boost",
     "beaming_lookup",
     "bend",
     "bend_exact",
     "chandrasekhar_h",
     "compute_profile",
     "cos_psi",
+    "cos_xi",
     "deflection_angle",
+    "doppler_factor",
     "eddington_limb_darkening",
+    "lorentz_gamma",
     "extract_intensity",
     "find_knee",
     "fit_limb_darkening",
@@ -58,6 +74,8 @@ __all__ = [
     "rotate_vector",
     "sample_step_size",
     "sample_thomson_angle",
+    "spot_speed",
     "statistical_error",
+    "travel_time_delay",
     "visibility_threshold",
 ]
