@@ -20,7 +20,7 @@ $$\Delta \mathrm{PF} \;=\; \mathrm{PF}\big[F_\star^{\text{realistic}}\big] \;-\;
 
 and the single-spot flux that everything is built from, fully substituted, reads
 
-$$F(\varphi)\;\propto\;\underbrace{\gamma\,\delta^{\,n}}_{\texttt{rotating.py}}\;\cdot\;\underbrace{D(\psi)}_{\texttt{bending.py}}\;\cdot\;\underbrace{I\big(\,\delta\cos\alpha\,;\;\tau\big)}_{\texttt{beaming.py}\;\leftarrow\;\texttt{monte\_carlo.py}}\;\cdot\;\underbrace{\delta\cos\alpha}_{\text{projection}}\;\cdot\;\mathbf{1}\!\left[\cos\alpha\ge 0\right],\qquad \cos\alpha=\operatorname{bend}\!\big(\cos\psi(\varphi)\big)$$
+$$F(\varphi)\;\propto\;\underbrace{\gamma\,\delta^{\,n}}_{\texttt{rotating.py}}\;\cdot\;\underbrace{D(\psi)}_{\texttt{bending.py}}\;\cdot\;\underbrace{I\big(\,\delta\cos\alpha\,;\;\tau\big)}_{\texttt{beaming.py}\;\leftarrow\;\texttt{monte\_carlo.py}}\;\cdot\;\underbrace{\delta\cos\alpha}_{\text{projection}}\;\cdot\;\mathbf{1}\!\left[\cos\alpha\ge 0\right],\qquad \cos\alpha=\mathrm{bend}\!\big(\cos\psi(\varphi)\big)$$
 
 The rest of this document unfolds that expression symbol by symbol, equations
 **(1)–(23)**. The isotropic-vs-realistic comparison changes exactly **one
@@ -136,7 +136,7 @@ touches zero at any phase, which is what makes multi-spot *tiling* (below) decis
 $$F_\star(\varphi) = \sum_k w_k\, F\!\big(\varphi - \varphi_{0,k}\big), \qquad w_k \propto A_k\, T_k^4$$
 
 Light is additive, so each spot is one full run of the chain below, shifted to its
-longitude $\varphi_{0,k}$ (`np.roll` by $\operatorname{round}(\varphi_{0,k} \cdot n_\text{phase})$
+longitude $\varphi_{0,k}$ (`np.roll` by $\mathrm{round}(\varphi_{0,k} \cdot n_\text{phase})$
 grid points) and weighted by how much light it puts out: its area $A_k$ times the
 fourth power of its temperature $T_k$ — a hot surface radiates as $T^4$ (the
 Stefan–Boltzmann law), so a slightly hotter spot outshines a cooler one by a lot.
