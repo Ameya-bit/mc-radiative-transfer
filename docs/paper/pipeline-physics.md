@@ -16,11 +16,11 @@
 
 The paper's central number is
 
-$$\Delta \mathrm{PF} \;=\; \mathrm{PF}\big[F_\star^{\text{realistic}}\big] \;-\; \mathrm{PF}\big[F_\star^{\text{isotropic}}\big],$$
+$$\Delta \mathrm{PF} = \mathrm{PF}\big[F_\star^{\text{realistic}}\big] - \mathrm{PF}\big[F_\star^{\text{isotropic}}\big],$$
 
 and the single-spot flux that everything is built from, fully substituted, reads
 
-$$F(\varphi)\;\propto\;\underbrace{\gamma\,\delta^{\,n}}_{\text{rotating.py}}\;\cdot\;\underbrace{D(\psi)}_{\text{bending.py}}\;\cdot\;\underbrace{I\big(\,\delta\cos\alpha\,;\;\tau\big)}_{\text{beaming.py (from monte-carlo)}}\;\cdot\;\underbrace{\delta\cos\alpha}_{\text{projection}}\;\cdot\;\mathbf{1}\!\left[\cos\alpha\ge 0\right],\qquad \cos\alpha=\mathrm{bend}\!\big(\cos\psi(\varphi)\big)$$
+$$F(\varphi) \propto \underbrace{\gamma\,\delta^{n}}_{\text{rotating.py}} \cdot \underbrace{D(\psi)}_{\text{bending.py}} \cdot \underbrace{I(\delta\cos\alpha;\,\tau)}_{\text{beaming.py (from monte-carlo)}} \cdot \underbrace{\delta\cos\alpha}_{\text{projection}} \cdot \mathbf{1}[\cos\alpha \ge 0], \qquad \cos\alpha = \mathrm{bend}(\cos\psi(\varphi))$$
 
 The rest of this document unfolds that expression symbol by symbol, equations
 **(1)–(23)**. The isotropic-vs-realistic comparison changes exactly **one
@@ -133,7 +133,7 @@ touches zero at any phase, which is what makes multi-spot *tiling* (below) decis
 
 **(3) A star = weighted spots** — `multi_spot_flux()` · `scripts/anchor_lib.py`
 
-$$F_\star(\varphi) = \sum_k w_k\, F\!\big(\varphi - \varphi_{0,k}\big), \qquad w_k \propto A_k\, T_k^4$$
+$$F_\star(\varphi) = \sum_k w_k\, F(\varphi - \varphi_{0,k}), \qquad w_k \propto A_k\, T_k^4$$
 
 Light is additive, so each spot is one full run of the chain below, shifted to its
 longitude $\varphi_{0,k}$ (`np.roll` by $\mathrm{round}(\varphi_{0,k} \cdot n_\text{phase})$
@@ -150,7 +150,7 @@ Only relative weights within one star matter — never compare $w_k$ across anch
 
 **(4) The master flux equation** — `point_spot_flux()` · `src/mcrt/pulse.py`
 
-$$F(\varphi) \;\propto\; \underbrace{\gamma}_{(9)}\;\underbrace{B(\delta)}_{(13)\,\text{or}\,(14)}\;\underbrace{D}_{(6)\,\text{or}\,(7)}\;\underbrace{I(\mu')}_{(15)}\;\underbrace{\mu'}_{(12)}\;\cdot\;\mathbf{1}\!\left[\cos\alpha \ge 0\right]$$
+$$F(\varphi) \propto \underbrace{\gamma}_{(9)}\, \underbrace{B(\delta)}_{(13)\,\text{or}\,(14)}\, \underbrace{D}_{(6)\,\text{or}\,(7)}\, \underbrace{I(\mu')}_{(15)}\, \underbrace{\mu'}_{(12)} \cdot \mathbf{1}[\cos\alpha \ge 0]$$
 
 Each factor is one physical effect — comoving area ($\gamma$), Doppler boost
 ($B$), gravitational solid-angle stretch ($D$), surface brightness ($I$), and
@@ -185,7 +185,7 @@ visibility threshold is *negative*, so you literally see part of the star's far 
 
 **(7) Light bending, exact** — `deflection_angle()`, `ExactBending` · `src/mcrt/bending.py`
 
-$$\psi(\alpha) = \int_0^1 \frac{\tilde\beta\; dx}{\sqrt{1 - \tilde\beta^2 x^2 (1 - u x)}}, \qquad \tilde\beta = \frac{\sin\alpha}{\sqrt{1-u}}, \qquad D = \frac{d\cos\alpha}{d\cos\psi}\ \text{(numerical)}$$
+$$\psi(\alpha) = \int_0^1 \frac{\tilde\beta\, dx}{\sqrt{1 - \tilde\beta^2 x^2 (1 - u x)}}, \qquad \tilde\beta = \frac{\sin\alpha}{\sqrt{1-u}}, \qquad D = \frac{d\cos\alpha}{d\cos\psi}\ \text{(numerical)}$$
 
 The true general-relativistic ray path — Schwarzschild means the exact spacetime
 around a non-spinning mass — integrated by Gauss–Legendre quadrature (a standard
@@ -256,7 +256,7 @@ bolometric default.
 
 **(14) Band-limited boost** — `band_boost()` · `src/mcrt/rotating.py`
 
-$$B = \frac{\Phi_k(\delta)}{\Phi_k(1)}, \qquad \Phi_k(\delta) = \int_{E_1}^{E_2} \frac{E^k\, dE}{\exp\!\big[E / \big(\delta\sqrt{1-u}\; kT\big)\big] - 1}, \qquad k = 2\ (\text{counts})\ \text{or}\ 3\ (\text{energy})$$
+$$B = \frac{\Phi_k(\delta)}{\Phi_k(1)}, \qquad \Phi_k(\delta) = \int_{E_1}^{E_2} \frac{E^k\, dE}{\exp\big[E / \big(\delta\sqrt{1-u}\, kT\big)\big] - 1}, \qquad k = 2\ (\text{counts})\ \text{or}\ 3\ (\text{energy})$$
 
 Here $E$ is photon energy, $[E_1, E_2]$ the instrument band (NICER's calibrated
 0.3–1.5 keV for J0740), and $kT$ the spot's temperature in energy units. For a
@@ -370,7 +370,7 @@ solution — see [Two meanings of "isotropic"](#two-meanings-of-isotropic).
 
 **(22) Boundaries** — `Simulation.run()` · `src/mcrt/monte_carlo.py`
 
-$$\tau_{\text{pos}} \le 0 \;\Rightarrow\; \text{escape, record } \mu = -d_z; \qquad \tau_{\text{pos}} \ge \tau_{\text{total}} \;\Rightarrow\; \text{absorbed (lost)}$$
+$$\tau_{\text{pos}} \le 0 \Rightarrow \text{escape, record } \mu = -d_z; \qquad \tau_{\text{pos}} \ge \tau_{\text{total}} \Rightarrow \text{absorbed (lost)}$$
 
 $\tau_{\text{pos}}$ is the photon's current vertical depth in the slab (it is
 injected at the base, $\tau_{\text{pos}} = \tau_{\text{total}}$, the slab's full
