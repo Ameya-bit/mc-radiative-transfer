@@ -18,9 +18,9 @@ enough around the back that **neither spot ever sets** — each only grazes the 
 they *tile* the rotation: when one is at the limb the other faces us, so the summed
 flux never falls near zero (floor F_min/F_max ≈ 0.70). The isotropic pulsed fraction is
 therefore low and far from saturation (PF ≈ 0.18), leaving ample headroom. Swapping in
-the realistic beaming raises it directly: **ΔPF climbs to ≈ +0.16 at τ ≈ 10**, the same
-size, sign, and τ-dependence v0.9.0 found on invented geometries — now on a published
-star and *visible in the pulsed fraction itself*.
+the realistic beaming raises it directly: **ΔPF = +0.137 ± 0.003 at τ ≈ 10** (production
+library, exact Schwarzschild bending), the same sign, size, and τ-dependence v0.9.0 found
+on invented geometries — now on a published star and *visible in the pulsed fraction itself*.
 
 Both teams agree (the cross-check anchor). Miller's independent fit agrees with Riley on
 M, R, inclination, anti-phasing, and the two-circular-spot model, but places the spots
@@ -28,8 +28,8 @@ essentially *on the equator* (colatitude ≈ 92°). There each spot's *center* d
 behind the star for ~21% of the cycle — yet because the two spots are anti-phased, the
 eclipses fall at opposite phases and the *combined* pulse still never reaches zero
 (floor ≈ 0.63). So PF stays unsaturated for Miller too, and the swap lands an even larger
-**ΔPF ≈ +0.23 at τ ≈ 10**. The headline is therefore robust to the choice of team: at
-J0740 the beaming systematic is a +0.16…+0.23 pulsed-fraction effect either way.
+**ΔPF = +0.195 ± 0.005 at τ ≈ 10**. The headline is therefore robust to the choice of team:
+at J0740 the beaming systematic is a +0.137…+0.195 pulsed-fraction effect either way.
 
 The discriminator, made precise. The thing that flips J0030's verdict is *not* whether a
 single spot eclipses — Miller's J0740 spots eclipse 21% each and still leave a live ΔPF.
@@ -105,7 +105,7 @@ RILEY = Anchor(
 # Δφ2 = 0.558 cyc (anti-phased). Equatorial spots + equatorial observer ⇒ each spot's
 # CENTER dips behind the star ~21% of the cycle. But anti-phasing puts those eclipses at
 # opposite phases, so the combined pulse still never reaches zero (floor ≈ 0.63): PF stays
-# unsaturated and ΔPF is large (+0.23) — the same regime as Riley, not J0030. A useful
+# unsaturated and ΔPF is large (+0.195) — the same regime as Riley, not J0030. A useful
 # second-team confirmation that J0740's systematic is PF-visible regardless of the fit.
 _MI_W1 = np.sin(0.098) ** 2 * 0.094 ** 4
 _MI_W2 = np.sin(0.096) ** 2 * 0.094 ** 4
@@ -188,7 +188,7 @@ def plot_result(tau_values, results, path=FIGURE_PATH):
 
     # A — the headline: realistic beaming raises the pulsed fraction directly, because
     # J0740's pulse is unsaturated. Both teams' fits give a live, positive ΔPF (Riley
-    # +0.16, Miller +0.23 at τ≈10) — the systematic is PF-visible regardless of the fit.
+    # +0.137, Miller +0.195 at τ≈10) — the systematic is PF-visible regardless of the fit.
     for anchor in ANCHORS:
         r, c = results[anchor.label], colors[anchor.label]
         ax_pf.semilogx(tau_values, r["delta_pf"], "o-", color=c,
@@ -278,7 +278,7 @@ def print_summary(tau_values, results):
     print("\nReading: J0740's two hot spots are anti-phased, so they tile the rotation and\n"
           "the combined pulse never reaches zero (floor 0.6–0.7). PF is therefore low and\n"
           "unsaturated, and the beaming systematic lands directly in the pulsed fraction —\n"
-          "ΔPF ≈ +0.16 (Riley) to +0.23 (Miller), the same effect v0.9.0 found on invented\n"
+          "ΔPF = +0.137 (Riley) to +0.195 (Miller), the same effect v0.9.0 found on invented\n"
           "geometries, now on a real star and confirmed by both teams. (Miller's spots even\n"
           "dip behind 21% each, but anti-phasing keeps the pulse off zero.) Contrast J0030:\n"
           "same-hemisphere spots, deep 45% eclipses that don't tile → PF saturates, ΔPF ≈ 0,\n"

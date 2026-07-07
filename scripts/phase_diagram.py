@@ -3,7 +3,7 @@
 The two real-star anchors are single points in a much larger geometry space:
 v0.9.1 (J0030) found the isotropic→realistic systematic *saturated* out of the
 pulsed fraction (ΔPF ≈ 0, the effect hiding in waveform shape), while v0.9.2
-(J0740) found it *live* in the pulsed fraction (ΔPF ≈ +0.16…+0.23). The headline
+(J0740) found it *live* in the pulsed fraction (ΔPF ≈ +0.137…+0.195). The headline
 claim of the project is that the discriminator between those two outcomes is not
 whether a single spot eclipses but whether the two spots **tile** the rotation.
 This script turns that claim from two examples into a map.

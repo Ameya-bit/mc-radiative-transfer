@@ -2,7 +2,7 @@
 
 Earlier work measured the beaming systematic ΔPF = PF_real − PF_iso on three
 *invented* always-visible geometries (``beaming_pulse_sweep.py``), where it reached
-+0.16. This script anchors the same swap at PSR J0030+0451's published geometry —
+the ≈ +0.15 scale. This script anchors the same swap at PSR J0030+0451's published geometry —
 the canonical NICER mass–radius pulsar — using two independent fits:
 
     Riley et al. (2019, ApJL 887 L21)   — X-PSI / Amsterdam, ST+PST model

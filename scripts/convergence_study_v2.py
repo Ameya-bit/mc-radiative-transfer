@@ -13,7 +13,7 @@ docs/next-steps.md §5:
   2. **Convergence is measured against escaped photons** — the real statistical
      currency — so one calibration converts to an injected-N budget per τ.
   3. **ΔPF joins the tracked observables.** The paper's claim is the pulsed-
-     fraction shift ΔPF ≈ +0.16 (J0740, Riley 2021 geometry); each (τ, N, seed)
+     fraction shift ΔPF ≈ +0.15 (J0740, Riley 2021 geometry); each (τ, N, seed)
      run's I(μ) is pushed through the anchor pipeline so we measure directly
      how much of ΔPF's spread is Monte Carlo noise. The mean should hold steady
      with N while the seed-to-seed spread collapses as N^(-1/2).
