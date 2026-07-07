@@ -20,6 +20,92 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.9.1 — Exact Schwarzschild bending, enacted: the ~1% approximation was 2σ
+*2026-07-07 · commit `<pending>`*
+
+**The light-bending approximation is retired at the anchors, and it mattered. Every result to
+date used Beloborodov's (2002) *linear* map cos α = u + (1 − u) cos ψ, "exact to ~1%" — but worst
+at grazing emission, which is exactly where J0740's faint phase (μ_min ≈ 0.005, u = 0.494) sets
+the pulsed fraction. B1 built the exact Schwarzschild ray integral (`ExactBending`) and validated
+it (the independent SD1a code-comparison residual fell 0.80% → 0.11%). B2 now measures the cost on
+the production 5-seed library and Gate G1 rules: at Riley (u = 0.494) the exact map pulls
+ΔPF(τ = 10) from +0.144 ± 0.003 to +0.137 ± 0.003 — a −0.0066 shift, 2.1σ, a fixed modeling bias
+that extra photons cannot remove (the ± σ is seed noise; the shift is not). Miller (u = 0.444):
++0.201 → +0.195 (1.1σ). Same sign, size, and geometry-routing — a tightening, not a reversal — so
+this converts the referee's sharpest attack ("your bending is ~1% accurate right where your faint
+phase lives") into a table row. J0030 stays saturated (ΔPF ≡ 0) under either map.**
+
+The shift is resolution-stable to five decimals (n_alpha 2048 → 16384) and vanishes in the flat
+limit, so it is physics, not tabulation. A second, qualitative correction falls out: the linear map
+extrapolates *past the true grazing horizon* — claiming a Riley spot stays visible to ψ = 167° when
+the exact horizon is 150.6° — so the v0.9.2 "neither J0740 spot ever sets" was a linear artifact.
+Under exact bending each Riley spot eclipses ≈ 14% of the cycle, yet the anti-phased pair still
+*tiles* (combined flux floor 0.70), PF stays unsaturated, ΔPF stays live. Even the "never-sets" star
+turns out to eclipse and still tiles — the paper's **tiling-not-eclipse** discriminator only sharpens.
+The switch is **enacted in the pipeline**: `j0740_anchor.py` and the phase-diagram star markers build
+`ExactBending(u)` per anchor; the broad phase-diagram heatmap stays linear (stated tolerance ≤ 0.007);
+`a3_seed_errors.py` stays linear as the convergence-study cross-check. **+0.137 is the 0 Hz baseline** —
+the Doppler/aberration layer (Track C, Gate G2) stacks on top additively. Full suite 82 green;
+the linear headline reproduces bit-for-bit.
+
+![The two real-star anchors on the tiling/saturation phase diagram, ΔPF markers now computed with exact Schwarzschild bending — J0740 (both fits) on the PF-live side, J0030 on the saturated side](data/phase_diagram.png)
+
+📐 **Full derivation:** [v0.9.9 — Exact Schwarzschild Bending](docs/deep-dives/v0.9.9-exact-bending.md) (B1 built + validated the map; B2, here, measured the shift and enacted the switch)
+
+**Next:** Track C — the Doppler + aberration layer (Gate G2), measured on this exact-bending
+baseline; then Track D (isotropic-scattering H(μ) transport validation) before v1.0.0 — the paper.
+
+### v0.9.7.2 — Downstream re-runs: the headline gets its error bar
+*2026-07-07 · commit `3b1fc93`*
+
+**Every downstream result is re-run off the production library, per seed, so the paper's headline
+is finally quoted as ΔPF ± σ. Pushing each of the five per-seed I(μ; τ) curves through the same
+verified anchor pipeline turns the seed-to-seed spread into a Monte Carlo error bar in the currency
+of the claim: at J0740, ΔPF(τ = 10) = +0.144 ± 0.003 (Riley) and +0.201 ± 0.005 (Miller) — 1.2σ
+from the v0.9.7 converged +0.1486, PASS. This retires the old +0.16 / +0.23 point estimates: those
+were ~1σ-high single realizations, not the converged systematic. J0030 stays saturated (shape-RMS
+~6%, PF pinned); the finite-cap bound and the phase diagram re-run clean, every verdict unchanged.**
+
+The driver (`scripts/a3_seed_errors.py`) reuses the `j0740`/`j0030` `sweep_anchor` functions
+unchanged — a single seed's `intensity_by_tau_seed[:, si, :]` slice already has the (n_tau, n_bins)
+shape the anchors expect — so the pooled curve gives the central value and the five seeds give σ,
+with no new geometry code. The ± σ is seed noise (∝ 1/√N): it shrinks with more photons, but the
+sign and size of ΔPF do not. This is the number the paper cites (later bending-corrected to
++0.137 / +0.195 at v0.9.9.1, a separate ~2σ systematic).
+
+![J0740 two-spot pulse and ΔPF(τ) — the non-eclipsing anchor whose headline the production library fixes at +0.144 ± 0.003, with the ΔPF-vs-background robustness panel](data/pulse_profile_j0740.png)
+
+📐 **Full derivation:** [v0.9.7.2 — Downstream Re-runs off the Production Library](docs/deep-dives/v0.9.7.2-downstream-rerun.md)
+
+**Next:** Track B — exact Schwarzschild bending, to test whether the linear light-bending
+approximation biases this headline beyond its own error bar (it does: v0.9.9 / v0.9.9.1).
+
+### v0.9.7.1 — The production beaming library: escape-matched, 5-seed, error-barred
+*2026-07-07 · commit `663612d`*
+
+**The library every downstream number rests on is rebuilt to the v0.9.7 prescription. In place of
+a flat 200k injected photons per τ on one sequential RNG, an escape-matched budget targets 4×10⁵
+*escaped* photons at every τ across five independent seeds (≈ 79.3M injected total), storing per-bin
+seed σ and b(τ) ± σ. The rebuild vindicates the redo: escape fraction falls 92% → 4.2% from τ = 0.1
+to 30 (which is why uniform injection had been hiding a ~22× statistics disparity), and b(τ) rises
+monotonically through τ = 3 and then plateaus — 1.790 ± 0.035 at τ = 10 vs 1.809 ± 0.040 at τ = 30,
+flat within error — confirming the old τ = 30 dip was noise and τ = 10 ≡ τ = 30. `SHAPE_TAU = 10`
+now sits on a measured plateau, not a "peak."**
+
+`tau_sweep.py` was reworked into a process-parallel builder with per-(τ, seed) `SeedSequence`
+streams — killing the sequential RNG that coupled rows — running 71.9 min wall on 16 workers. Two
+bias fixes were folded in while the file was open: I(μ) normalized by the fitted slope `a` (not the
+single μ ≈ 0.975 bin, fix 8a), and each bin divided by its *mean escaped* μ rather than the bin
+center (unbiasing the low-μ tail, fix 8b). `beaming_library.npz` stores the pooled `intensity_by_tau`,
+per-bin seed std, `b_of_tau` ± σ, all five per-seed curves (the error bars downstream needs),
+escape fractions, and provenance metadata.
+
+![Limb-darkening slope b(τ) with per-seed error bars — rising monotonically to a plateau near 1.8, with the τ = 30 dip resolved as noise](data/beaming_slope_vs_tau.png)
+
+📐 **Full derivation:** [v0.9.7.1 — The Production Beaming Library](docs/deep-dives/v0.9.7.1-production-library.md)
+
+**Next:** downstream re-runs off this library to quote every result as ΔPF ± σ (v0.9.7.2).
+
 ### v0.9.7 — The convergence redo: escaped photons are the currency
 *2026-07-06 · commit `<pending>`*
 
