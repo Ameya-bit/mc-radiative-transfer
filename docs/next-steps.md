@@ -57,8 +57,12 @@ The sprint is done when every box below is checked:
   function; τ = 10, 5 seeds, 4.1×10⁵ escaped → flux-space reduced **χ² = 0.70** (dof 17) vs H(μ)·μ;
   Thomson control χ² = 1.49 (2.8%) = the ~1–3% phase-function sensitivity ⇒ H is **near-exact**,
   not exact, for the real atmosphere
-- [ ] First-bin / clamped-tail sensitivity of ΔPF quantified (perturbation + H-tail splice)
-- [ ] Atmosphere-law robustness row: ΔPF repeated with an analytic limb-darkening law
+- [x] First-bin / clamped-tail sensitivity of ΔPF quantified (perturbation + H-tail splice) — **Track E2
+  done (v0.9.12)**, [deep-dive](deep-dives/v0.9.12-tail-and-robustness.md): resample σ + H-tail splice on the
+  two μ<0.1 bins shift ΔPF by ≤ 0.006 (≤ the ±0.003 seed bar), static and at 346.5 Hz — tail not load-bearing
+- [x] Atmosphere-law robustness row: ΔPF repeated with an analytic limb-darkening law — **Track E3 done
+  (v0.9.12)**: Eddington (b=1.50) and Chandrasekhar H(μ) (b=1.68) reproduce the positive, spin-diluted ΔPF
+  (+0.13…+0.20 static, +0.03…+0.06 at 346.5 Hz); magnitude tracks slope b — same sign + geometry-routing
 - [ ] Scope paragraphs drafted: bolometric-vs-band (item 6), boundary semantics (item 7)
 - [ ] `SHAPE_TAU` comment + all docs reworded "plateau", stale +0.16/+0.23 numbers propagated out
 - [ ] Full test suite green, incl. new tests for bending/Doppler/isotropic modes
@@ -250,19 +254,21 @@ overlay is a **near-exact** reference; never write "matches the exact solution" 
 `SHAPE_TAU = 10` in `anchor_lib.py` to "on the saturated b(τ) plateau" (not "where b(τ) peaks").
 **Now runs LAST (v0.9.10 ripple):** it propagates the three-part routing framing (mechanism +
 geometry router + spin router), so it is blocked on C4 and the E2/E3 rotation-on rows.
-**E2. Tail sensitivity (item 4):** (a) resample the first two μ-bins within their measured
-per-bin σ (~200 draws) → push through the anchor pipeline → quote induced σ(ΔPF);
-(b) splice an H(μ)-shaped tail below μ = 0.1 in place of the clamp → quote |δ(ΔPF)| as the
-tail-model systematic. Two sentences in the paper, both with numbers. **Run static AND
-rotation-on (v0.9.10 ripple):** aberration resamples I(μ) at μ' = δ cos α — including near
-the clamped first bin — so the static sensitivity numbers do not automatically carry over
-to the spin-diluted ΔPF.
-**E3. Atmosphere-law robustness row:** repeat the anchor swap with analytic beaming laws
-already in `theory.py` — Eddington 1 + 1.5μ and Chandrasekhar H(μ) — as extra rows next to the
-Thomson-slab result. Deliverable: "same sign and geometry-dependence under independent
-limb-darkening laws" — defuses the "your slab isn't a hydrogen atmosphere" objection cheaply.
-**Add a 346.5 Hz row per law (v0.9.10 ripple):** the diluted + routed numbers are the quotable
-ones, so the robustness claim must hold there too (both the residual ΔPF and the shape RMS).
+**E2. Tail sensitivity (item 4)** — ✅ **DONE (v0.9.12).** `scripts/e2_tail_sensitivity.py` →
+`data/e2_tail_sensitivity.npz` + figure; [deep-dive](deep-dives/v0.9.12-tail-and-robustness.md).
+(a) Resample the two μ<0.1 bins within their measured per-bin σ (500 draws) → induced σ(ΔPF);
+(b) splice a Chandrasekhar-H-shaped tail below μ=0.1 in place of the clamp → |δ(ΔPF)| tail systematic.
+**Both effects ≤ 0.006** — at or below the ±0.003 seed bar — static and at 346.5 Hz; the clamped
+grazing tail is not load-bearing. Run rotation-on as the ripple demanded: the one place the tail
+bites is **Miller at spin** (|δ|=0.006), where the grazing spots let aberration (μ'=δ cos α) pull
+the tail into the min/max PF statistic. Both drivers reproduce the +0.137/+0.195 → +0.037/+0.061
+headline exactly as their baseline.
+**E3. Atmosphere-law robustness row** — ✅ **DONE (v0.9.12).** `scripts/e3_atmosphere_laws.py` →
+`data/e3_atmosphere_laws.npz` + figure. Repeated the J0740 swap under **Eddington 1+1.5μ** (b=1.50)
+and **Chandrasekhar H(μ)** (b=1.68) alongside the Thomson slab (b=1.79). All three give a positive,
+PF-live static ΔPF (+0.128…+0.196) diluting to +0.026…+0.061 at 346.5 Hz, with waveform-shape RMS
+~0.10–0.13 throughout — **same sign and geometry-routing under independent laws**, magnitude tracking
+slope b. Defuses "your slab isn't a hydrogen atmosphere": the effect is a property of limb darkening.
 
 ### Track F — Paper-scope drafting (no dependencies; fill idle moments)
 
@@ -307,13 +313,14 @@ than any number does:
 | v0.9.8 | Production library + downstream re-runs + 8a/8b fixes + SHAPE_TAU rewording | A, E1 |
 | v0.9.9 | Exact bending: implementation, validation, measured ΔPF shift (gate G1) | B |
 | v0.9.10 | Doppler/aberration: implementation, validation, coupling + **shape routing** + **band-limited variant** + **caveat audit** (gate G2 + routing framing) | C1–C4 |
-| v0.9.11 | Isotropic-scattering H(μ) validation (**Track D done**) + tail sensitivity + robustness rows (**incl. rotation-on variants**) | D ✅, E2, E3 |
+| v0.9.11 | Isotropic-scattering H(μ) validation (**Track D done**) | D ✅ |
+| v0.9.12 | Tail sensitivity (E2) + atmosphere-law robustness (E3), both **incl. rotation-on variants** | E2 ✅, E3 ✅ |
 | v1.0.0-rc | Scope paragraphs merged, all numbers propagated, suite green → **start the paper** | F |
 
 Each lands with the usual README progress-log entry + deep-dive; commit refs backfilled per
-convention. Original priority **A > B > C > E2 > D > E3**; with A, B, C (incl. C4), and **D** now
-landed the remaining order is **E2(rot) > E3(rot) > E1-last** — E1 propagates the routing
-framing and must wait for the numbers it propagates.
+convention. Original priority **A > B > C > E2 > D > E3**; with A, B, C (incl. C4), **D**, **E2**,
+and **E3** now landed the only remaining sprint item is **E1** (number propagation, in progress) —
+it propagates the routing framing off the numbers E2/E3 produced — then Track F scope paragraphs.
 
 ## Novelty position (unchanged; pending human verification)
 

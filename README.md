@@ -51,6 +51,35 @@ one — the wording guardrail the paper's transport paragraph (item 7) needs. Su
 **Next:** Track E with rotation-on variants (tail sensitivity E2, atmosphere-law robustness E3),
 then E1 number propagation → v1.0.0-rc, the paper.
 
+### v0.9.12 — The headline survives its two cheapest attacks: the tail model and the atmosphere law
+*2026-07-07 · commit `<pending>`*
+
+**Two structural worries about the beaming curve that feeds ΔPF are now measured, and neither
+moves the result. First, the *grazing tail*: the library's two lowest-μ bins are its noisiest
+(per-seed scatter 5.4% and 3.2%, vs ~0.6% just above μ=0.1) and the lookup clamps them flat below
+μ=0.1 — an arbitrary choice. Resampling those bins within their measured σ, and replacing the flat
+clamp with a physically-motivated Chandrasekhar-H-shaped tail, shifts ΔPF by ≤ 0.006, at or below
+the ±0.003 seed error bar — the tail is not load-bearing. Second, the *atmosphere law*: repeating
+the J0740 swap under the Eddington (1+1.5μ) and Chandrasekhar H(μ) limb-darkening laws reproduces
+the same positive, spin-diluted signal (+0.13…+0.20 static, +0.03…+0.06 at 346.5 Hz), with the
+magnitude tracking each law's limb-darkening slope b. The effect is a property of limb darkening,
+not of the Thomson slab.**
+
+Both are run static *and* at the real 346.5 Hz — because aberration samples the beaming at
+μ' = δ cos α, reaching into the tail at faint phases, the spin-diluted number carries its own tail
+sensitivity (the one place it shows: Miller at spin, |δ(ΔPF)| = 0.006, where the grazing spots let
+aberration pull the tail into the min/max statistic). Both drivers reproduce the exact-bending
+headline (+0.137/+0.195 static, +0.037/+0.061 at spin) as their reference case, so the perturbation
+is the only thing changing. Pure interpolation + geometry, seconds each. Suite **127 green**.
+
+![E3: ΔPF under three independent limb-darkening laws (Thomson slab, Eddington, Chandrasekhar H), both anchors, frozen vs 346.5 Hz — positive and PF-live everywhere, magnitude tracking slope b](data/e3_atmosphere_laws.png)
+
+📐 **Full derivation:** [v0.9.12 — Tail Sensitivity + Atmosphere-Law Robustness](docs/deep-dives/v0.9.12-tail-and-robustness.md)
+(E2 bin-resampling σ + H-tail splice; E3 three-law robustness rows, both spins)
+
+**Next:** E1 — propagate the numbers and three-part routing framing through README/anchor scripts,
+then Track F scope paragraphs → v1.0.0-rc, the paper.
+
 ### v0.9.10 — Doppler at the real spin: the PF systematic re-routes into waveform shape
 *2026-07-07 · commit `<pending>`*
 

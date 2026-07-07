@@ -25,7 +25,7 @@ from mcrt import compute_profile
 LIBRARY_PATH = "data/beaming_library.npz"
 
 N_PHASE = 1024
-SHAPE_TAU = 10.0  # τ where the limb-darkening slope b(τ) peaks (Rung C result)
+SHAPE_TAU = 10.0  # τ on the saturated b(τ) plateau (b(10) ≡ b(30); v0.9.7 convergence redo)
 BACKGROUND_FRACS = np.array([0.0, 0.05, 0.10, 0.20, 0.30])
 
 

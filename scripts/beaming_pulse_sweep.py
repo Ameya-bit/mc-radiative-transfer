@@ -50,7 +50,7 @@ GEOMETRIES = [
 # Geometry + τ used for the profile-shape panel. The mid case carries the largest
 # ΔPF: the near-aligned spot barely modulates μ, and the high-contrast spot already
 # sits near F_min → 0 (PF_iso near-maximal), so beaming has the most leverage in
-# between. τ=10 is where the limb-darkening slope b(τ) peaks.
+# between. τ=10 sits on the saturated b(τ) plateau (b(10) ≡ b(30); v0.9.7 convergence redo).
 SHAPE_GEOMETRY_INDEX = 1
 SHAPE_TAU = 10.0
 
