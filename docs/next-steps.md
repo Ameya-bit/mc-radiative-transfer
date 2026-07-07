@@ -2,11 +2,11 @@
 
 > Living handoff/roadmap doc. Snapshot as of **2026-07-06**, after v0.9.7 (convergence redo).
 > Purpose: a **one-day, parallelized sprint plan** that closes every open attention point from
-> [`pipeline-physics.md`](pipeline-physics.md) — by simulation change, by measurement, or by
+> [`pipeline-physics.md`](paper/pipeline-physics.md) — by simulation change, by measurement, or by
 > a drafted paper explanation — so that the research paper can be **started the next morning**
 > with nothing load-bearing left unverified.
-> Bibliography + novelty notes: [`references.md`](references.md). Attention-point audit:
-> [`pipeline-physics.md`](pipeline-physics.md) §"Things that need attention". Latest deep dive:
+> Bibliography + novelty notes: [`references.md`](paper/references.md). Attention-point audit:
+> [`pipeline-physics.md`](paper/pipeline-physics.md) §"Things that need attention". Latest deep dive:
 > [`deep-dives/v0.9.7-convergence-redo.md`](deep-dives/v0.9.7-convergence-redo.md).
 
 ---
@@ -344,7 +344,7 @@ Sotani & Miyamoto 2018) is antipodal-only, never PF-saturation-labeled. Our thre
 | `src/mcrt/monte_carlo.py` + `utils.py` | gain opt-in isotropic-scattering mode (D1) |
 | `scripts/anchor_lib.py` | `SHAPE_TAU` rewording (E1); robustness-row helpers (E3) |
 | `scripts/j0740_anchor.py` / `j0030_anchor.py` | re-run per seed → ΔPF ± σ (A3) |
-| `docs/pipeline-physics.md` | the attention-point audit this sprint closes |
+| `docs/paper/pipeline-physics.md` | the attention-point audit this sprint closes |
 | `docs/deep-dives/v0.9.7-convergence-redo.md` | budget table + method for Track A |
 
 ## Working notes

@@ -22,7 +22,7 @@ convention) then weight the pulse by Φ₂(δ)/Φ₂(1) with
 whose wide-band limits are exactly δ³/δ⁴ — so this measurement *contains* C2's
 conventions as limits and interpolates the honest answer between/beyond them.
 
-Inputs (published values, see docs/references.md):
+Inputs (published values, see docs/paper/references.md):
   - Riley 2021 ST-U:  log₁₀T = 5.988 (p) / 5.992 (s) → kT ≈ 0.0842 keV (equal-
     temperature caps to ~1%, so one kT keeps the multi-spot weights exact);
     NICER channels [30, 150) → 0.3–1.5 keV.

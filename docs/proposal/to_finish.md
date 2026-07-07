@@ -125,7 +125,7 @@ elements, apply the above per element with each element's own `ψ`, sum. Start w
   Miller 2019) as a realistic operating point; report the *differential* ΔPF and compare its size to
   NICER's reported PF / M–R uncertainty. **Relative change only — not a fit (see §6).**
 - **v1.0.0 — Paper.** Reframe the draft, assemble figures, write methods incl. the convergence
-  appendix and the verification ladder, submit. Citations live in `docs/references.md`; the
+  appendix and the verification ladder, submit. Citations live in `docs/paper/references.md`; the
   paper-fix and physics-caveat checklist is **§10** below. Key items:
   - Drop "Lucy 1999 photon-packet" framing → cite Whitney 2011 / Cashwell & Everett 1959 (the code
     is a single-photon random walk).
@@ -220,14 +220,14 @@ This document is the tie-breaker: real-star comparison is **differential, not a 
   published geometry/parameters and quoted uncertainties (Rung D).
 - *(Optional, only if oblateness comes up)* Morsink et al. (2007), ApJ, 663, 1244; Psaltis & Özel
   (2014), ApJ, 792, 87.
-- For paper-writing: citations are in **`docs/references.md`**; the draft-fix and physics-caveat
+- For paper-writing: citations are in **`docs/paper/references.md`**; the draft-fix and physics-caveat
   checklist is folded into **§10** below.
 
 ---
 
 ## 10. Paper grounding (folded in from the old grounding doc)
 
-Paper-prose / citation / caveat work — no code is wrong here. Citations: `docs/references.md`.
+Paper-prose / citation / caveat work — no code is wrong here. Citations: `docs/paper/references.md`.
 
 **Draft fixes (the current `RNAA_draft.pdf` mis-describes the code):**
 

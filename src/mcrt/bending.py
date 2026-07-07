@@ -36,7 +36,7 @@ uses D in place of ``1 − u``; see `pulse.point_spot_flux`.
 References:
     Pechenick, Ftaclas & Cohen (1983), ApJ 274, 846 — the exact deflection integral.
     Beloborodov (2002), ApJ 566, L85 — the linear approximation this validates.
-    La Placa et al. (2019), MNRAS 483, 5416 — modern exact ray-tracing benchmarks.
+    La Placa et al. (2019), RNAAS 3, 99 — modern analytic bending approximations.
 """
 
 import numpy as np

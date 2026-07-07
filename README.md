@@ -335,7 +335,7 @@ unexplained — and adopted as a fixed input regardless.**
 
 These consolidate the conventions and citations the paper leans on without changing any
 computation: the angle/coordinate conventions and the Bilous 2019 + Riley/Miller geometry
-quotes now live in [`docs/references.md`](docs/references.md), and the forward-vs-inverse
+quotes now live in [`docs/paper/references.md`](docs/paper/references.md), and the forward-vs-inverse
 reconciliation is written up in the deep dive.
 
 📐 **Full derivation:** [v0.9.3 — Research Notes](docs/deep-dives/v0.9.3-research-notes.md)
@@ -545,7 +545,7 @@ benchmark.
 - **Reference data is not committed** — third-party AAS supplementary material,
   gitignored; download + extract to `data/l26_reference/` to reproduce, and the
   test skips cleanly without it. Provenance / licensing:
-  [docs/references.md](docs/references.md#reference-data-sets).
+  [docs/paper/references.md](docs/paper/references.md#reference-data-sets).
 - **Code:** `scripts/code_comparison.py` → `data/pulse_profile_code_comparison.png`; new
   `test_sd1a_*` in `tests/test_pulse.py`. Tests: 36/36 pass.
 </details>
@@ -972,7 +972,10 @@ mc-radiative-transfer/
 │   │   ├── v0.9.0-beaming-pulse.md
 │   │   ├── make_figures.py    # Regenerates the figures below
 │   │   └── figures/           # Explanatory figures (01–08)
-│   ├── references.md          # Central bibliography (papers + data sources)
+│   ├── paper/                 # Paper-prep bundle — the three docs, self-contained
+│   │   ├── pipeline-physics.md   # Methods: the code → equation chain
+│   │   ├── references.md         # Central bibliography (papers + data sources)
+│   │   └── claims-evidence.md    # Results: claim → evidence map
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
 │   ├── RNAA_draft.pdf         # Paper draft
 │   └── proposal/              # Proposal + future directions
@@ -986,7 +989,7 @@ pip install -e .              # makes `mcrt` importable everywhere
 python scripts/validate_engine.py   # validation + beaming-function plot
 python scripts/convergence_study.py # photon-count convergence study (error vs N)
 python scripts/pulse_demo.py        # pulse-profile demo + analytic-check figure
-python scripts/code_comparison.py   # vs. the NICER code comparison (needs the L26 reference — see docs/references.md)
+python scripts/code_comparison.py   # vs. the NICER code comparison (needs the L26 reference — see docs/paper/references.md)
 python scripts/beaming_pulse_sweep.py  # isotropic-vs-realistic ΔPF over geometry × τ
 python scripts/plot_paths.py        # random-walk visualization
 pytest                              # run the unit tests

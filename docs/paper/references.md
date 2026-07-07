@@ -1,8 +1,11 @@
 # References & Data Sources
 
 > The project's single bibliography. Deep dives and the README link **into** this
-> file by anchor (e.g. `[Beloborodov (2002)](../references.md#beloborodov-2002)`)
+> file by anchor (e.g. `[Beloborodov (2002)](../paper/references.md#beloborodov-2002)`)
 > instead of repeating full citations. Add a source here once, cite it everywhere.
+> This is the reference link of the provenance chain (code → equation → reference
+> → claim): [`pipeline-physics.md`](pipeline-physics.md) is the equation link and
+> [`claims-evidence.md`](claims-evidence.md) is the claim link.
 >
 > The pulse-profile / NICER bibcodes below were checked against ADS/IOP on
 > 2026-06-09 — all five confirmed (Beloborodov 2002 ApJ 566 L85; Poutanen &
@@ -12,6 +15,12 @@
 >
 > Bilous 2019 ApJL 887 L23 (DOI 10.3847/2041-8213/ab53e7; arXiv:1912.05704) added and
 > verified against IOP/ADS on 2026-06-29.
+>
+> Pechenick, Ftaclas & Cohen 1983 (ApJ 274, 846), La Placa et al. 2019 (RNAAS 3, 99),
+> AlGendy & Morsink 2014 (ApJ 791, 78), and Poutanen 2020 (A&A 640, A24) added and verified
+> against ADS/IOP/arXiv on 2026-07-07 (the v0.9.9–v0.9.12 pass). One correction found in that
+> pass: `bending.py`'s docstring had cited La Placa under the wrong journal (MNRAS 483, 5416);
+> the paper is actually an AAS Research Note — fixed in code and recorded here.
 
 ---
 
@@ -34,35 +43,37 @@ packets" (we do single-photon transport, not Lucy packet splitting).
 ## Classical radiative transfer & limb darkening (the validation targets)
 
 ### Chandrasekhar (1960)
-*Radiative Transfer.* Dover. — The H-function for a semi-infinite scattering
-atmosphere; the exact limb-darkening law our beaming function is validated
-against. Two caveats to state honestly in the paper:
-(1) **scattering law** — the engine uses the Rayleigh/Thomson pattern ¾(1+μ²),
-while the H compared against is the *scalar isotropic* (p=1) solution
-(Chandrasekhar's Rayleigh case is a polarization-coupled matrix problem); the
-shapes agree closely but are not strictly the same physics. A clean apples-to-
-apples fix is an isotropic-scattering mode that should reproduce scalar H(μ) to
-within noise.
-> **Paper note — the percentage error to state explicitly.** Benchmarking the Thomson
-> engine against the *isotropic*-scattering H(μ) carries a small, percent-level error
-> in the reference limb-darkening *shape*: the two phase functions produce slightly
-> different emergent I(μ). The magnitude is currently **unquantified** — treat it as a
-> percent-level estimate, not a sourced number — so the paper must **not** claim an
-> "exact" match to Chandrasekhar without this caveat. To pin it down before publication,
-> either (a) run the engine in an isotropic-scattering mode and difference the thick-slab
-> I(μ) against scalar H(μ) — this measures the error directly for our exact finite-slab
-> setup — or (b) compare against Chandrasekhar's exact Rayleigh law of darkening (Ch. X).
-> Note: the *larger* Thomson-vs-isotropic effect is the ~11.7% limb polarization
-> (Chandrasekhar–Sobolev), but that does **not** enter our intensity-only beaming curve
-> I(μ), so it is irrelevant to the beaming result — mention it only to pre-empt the question.
-(2) **finite vs. semi-infinite** — H is the τ→∞ limit, so finite slabs (τ≲1)
-deviate; the rigorous finite-τ benchmark is Chandrasekhar's **X- and Y-functions**.
-*Used in:* v0.5.1, v0.6.0–v0.6.1 (`src/mcrt/theory.py`, beaming validation).
+*Radiative Transfer.* Dover. — The H-function: the exact, closed-form answer for how
+bright a deep scattering atmosphere looks from each viewing angle, **when each scatter
+sends the photon in a fully random direction ("isotropic scattering")**. It is the one
+place in this project where an exact textbook answer exists to compare against.
+Two caveats, both now resolved into measured numbers:
+(1) **scattering law** — our engine scatters with the Thomson pattern ¾(1+μ²) (the real
+physics for electrons), while H(μ) is exact only for isotropic scattering. So H was
+always a *near*-match, not an exact one.
+> **Resolved (v0.9.11, Track D): the gap is now measured, not estimated.** We added an
+> isotropic-scattering mode to the engine. Run that way, the engine reproduces H(μ)
+> within Monte Carlo noise (reduced χ² = 0.70) — which certifies the transport machinery
+> itself is correct. Run with the physical Thomson pattern, the same comparison differs
+> by up to **2.8%** (reduced χ² = 1.49) — that *is* the isotropic-H-vs-Thomson shape
+> difference. Paper wording: H(μ) is the exact reference for the isotropic mode and a
+> near-exact (~1–3%, measured) reference for the Thomson slab. (A larger-sounding
+> Thomson effect exists — the ~11.7% Chandrasekhar–Sobolev limb *polarization* — but our
+> beaming curve I(μ) is intensity-only, so it never enters.)
+(2) **finite vs. semi-infinite** — H(μ) assumes an infinitely deep atmosphere; our slab
+is finite. The v0.9.11 run at τ = 10 shows the finite slab has converged to the
+semi-infinite answer at the depths we use for the headline (the rigorous finite-τ
+formalism, Chandrasekhar's X- and Y-functions, stays a footnote).
+*Used in:* v0.5.1, v0.6.0–v0.6.1 (`src/mcrt/theory.py`, beaming validation);
+v0.9.11 (isotropic-mode exact validation, `scripts/d_isotropic_validate.py`);
+v0.9.12 (E3 — H(μ) as one of three swapped limb-darkening laws, b = 1.68).
 
 ### Eddington limb darkening
 The classical `I(μ) ∝ 1 + 1.5 μ` two-stream result (textbook; see Chandrasekhar
 1960 / Mihalas 1978). The linear approximation our fitted slope `b` is compared to.
-*Used in:* v0.5.1 onward (`eddington_limb_darkening`).
+*Used in:* v0.5.1 onward (`eddington_limb_darkening`); v0.9.12 (E3 — one of three
+swapped limb-darkening laws, b = 1.50, confirming ΔPF's sign/routing is a property
+of limb darkening itself, not of our particular slab).
 
 ---
 
@@ -73,14 +84,52 @@ ApJ, 566, L85. [DOI: 10.1086/339511](https://doi.org/10.1086/339511) ·
 [ADS: 2002ApJ...566L..85B](https://ui.adsabs.harvard.edu/abs/2002ApJ...566L..85B)
 — The linear light-bending approximation `cos α = u + (1 − u) cos ψ` with constant
 Jacobian `(1 − u)`; accurate to ~1% for `u ≲ 0.5`. The analytic-check closed form
-and the core of `bend()`.
-*Used in:* v0.8.0 (`bend`, `analytic_isotropic_pf`), v0.8.1 (code-comparison check).
+and the core of `bend()`. **Status since v0.9.9 (Track B, Gate G1):** at the anchors
+we now use the *exact* Schwarzschild bending (`src/mcrt/bending.py`, integrating the
+[Pechenick, Ftaclas & Cohen (1983)](#pechenick-ftaclas--cohen-1983) integral) — at
+J0740's extreme compactness (u = 0.494) the linear shortcut biased ΔPF by −0.0066
+(2.1σ) and hid a ~14% per-spot eclipse in Riley's geometry. The linear map remains
+the default for cheap sweeps and the analytic cross-checks.
+*Used in:* v0.8.0 (`bend`, `analytic_isotropic_pf`), v0.8.1 (code-comparison check),
+v0.9.9 (as the approximation validated against, then superseded at the anchors).
 
 ### Poutanen & Beloborodov (2006)
 MNRAS, 373, 836. [DOI: 10.1111/j.1365-2966.2006.11088.x](https://doi.org/10.1111/j.1365-2966.2006.11088.x) ·
 [ADS: 2006MNRAS.373..836P](https://ui.adsabs.harvard.edu/abs/2006MNRAS.373..836P)
-— The bolometric point-spot flux `F ∝ (1 − u) I(cos α) cos α` (slow-rotation form).
-*Used in:* v0.8.0 (`point_spot_flux`).
+— The bolometric point-spot flux `F ∝ (1 − u) I(cos α) cos α` (slow-rotation form),
+and the analytic foundation the rotating (Doppler) flux builds on.
+*Used in:* v0.8.0 (`point_spot_flux`); v0.9.10 (`src/mcrt/rotating.py` — the S+D flux
+is this formula with the Doppler factor and aberrated angle layered in).
+
+### Pechenick, Ftaclas & Cohen (1983)
+ApJ, 274, 846. [DOI: 10.1086/161498](https://doi.org/10.1086/161498) ·
+[ADS: 1983ApJ...274..846P](https://ui.adsabs.harvard.edu/abs/1983ApJ...274..846P)
+— The classic "hot spots on neutron stars" paper: the first full treatment of how the
+star's own gravity bends light from a surface hot spot on its way to us. Source of the
+**exact deflection integral** ψ(α) that `src/mcrt/bending.py` integrates numerically —
+the "truth" that Beloborodov's linear map approximates.
+*Used in:* v0.9.9 (Track B — `src/mcrt/bending.py`, exact anchors, Gate G1).
+
+### La Placa et al. (2019)
+RNAAS, 3, 99. [DOI: 10.3847/2515-5172/ab3227](https://doi.org/10.3847/2515-5172/ab3227) ·
+[arXiv:1907.11786](https://arxiv.org/abs/1907.11786) — A short research note giving a
+modern, more accurate analytic approximation of the same bending map. Cited as context
+for where approximations sit relative to the exact integral; we do **not** use its
+formula (we integrate the exact integral instead). *Citation fixed 2026-07-07:* the
+`bending.py` docstring had this under MNRAS 483, 5416 — the paper is actually a
+Research Note of the AAS.
+*Used in:* v0.9.9 (context citation in `bending.py`).
+
+### AlGendy & Morsink (2014)
+ApJ, 791, 78. [DOI: 10.1088/0004-637X/791/2/78](https://doi.org/10.1088/0004-637X/791/2/78) ·
+[ADS: 2014ApJ...791...78A](https://ui.adsabs.harvard.edu/abs/2014ApJ...791...78A) ·
+arXiv:1404.0609 — How fast spin flattens a neutron star (oblateness) and changes its
+surface gravity, with simple universal formulas. We cite it for **one number**: at
+J0740's 346.5 Hz spin, oblateness is a ~3% effect. That bounds our stated scope choice —
+the rotating flux includes Doppler + aberration but not oblateness, which is safe for the
+*differential* ΔPF because oblateness reshapes the star the same way for both beaming
+laws (it doesn't couple to the isotropic→realistic swap at first order).
+*Used in:* v0.9.10 (scope note in `src/mcrt/rotating.py`; C2/C4 caveat audit).
 
 ---
 
@@ -120,12 +169,17 @@ Confirm which is meant when reading outside the NICER papers.
 ### Bogdanov et al. (2019) — "Paper II", L26
 ApJL, 887, L26. [DOI: 10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968) ·
 [ADS: 2019ApJ...887L..26B](https://ui.adsabs.harvard.edu/abs/2019ApJ...887L..26B)
-— The pulse-profile **code-comparison** suite (test problems SD1/SD2/OS1). The
-Illinois–Maryland (IM) reference waveforms are our **code-comparison** benchmark;
-codes agree to ≲ 0.1%. **Note:** this is Paper *II* (L26), not Paper I (L25, the data set).
-The reference data is a separate, gitignored download — see
-[Reference data sets](#reference-data-sets) below.
-*Used in:* v0.8.1 (code-comparison check, test SD1a).
+— Two distinct roles. (a) The pulse-profile **code-comparison** suite (test problems
+SD1/SD2/OS1): the Illinois–Maryland (IM) reference waveforms are our benchmark; codes
+agree to ≲ 0.1%. (b) The **Schwarzschild + Doppler recipe** (§2): the exact equations
+for what a spinning spot's velocity does to the light — surface speed (eq. 11), Doppler
+factor (eq. 12), aberration (eq. 13), light-travel delay (eqs. 18–19), observed flux
+(eq. 20) — which `src/mcrt/rotating.py` implements, equation for equation.
+**Note:** this is Paper *II* (L26), not Paper I (L25, the data set). The reference data
+is a separate, gitignored download — see [Reference data sets](#reference-data-sets) below.
+*Used in:* v0.8.1 (code-comparison check, test SD1a — 1 Hz, no rotation effects);
+v0.9.10 (Track C — `src/mcrt/rotating.py` recipe + test SD1c, the same geometry at
+200 Hz, which isolates the pure Doppler/aberration signal as SD1c − SD1a).
 
 ### Riley et al. (2019) — J0030, L21
 ApJL, 887, L21. [DOI: 10.3847/2041-8213/ab481c](https://doi.org/10.3847/2041-8213/ab481c) ·
@@ -161,7 +215,7 @@ area × T⁴ weighting); the third spot is negligible and dropped.
 > PSR J0030+0451 is at least an offset dipole, and may have higher moments that dominate
 > the field strength near the stellar surface" — consistent with the complex fields
 > inferred for other millisecond rotation-powered pulsars and for the accretion-powered
-> MSPs thought to be their progenitors. Two teams, two codes, same dipole-defying result.
+> millisecond pulsars (MSPs) thought to be their progenitors. Two teams, two codes, same dipole-defying result.
 *Used in:* v0.9.1 (real-star anchor — `scripts/j0030_anchor.py`).
 
 ### Bilous et al. (2019) — J0030, L23
@@ -230,7 +284,8 @@ and the two-circular-spot model, but places the spots essentially **on the equat
 (Θ ≈ 92°), the least-constrained parameter. **Eclipse note:** with equatorial spots and
 an equatorial observer each spot's *center* is hidden ~21% of the cycle — yet because
 the two are anti-phased the *combined* pulse never reaches zero, so PF stays unsaturated
-and ΔPF is live (≈ +0.23). The takeaway: what saturates PF is not single-spot eclipse
+and ΔPF is live (≈ +0.195 static, exact bending; see [`claims-evidence.md`](claims-evidence.md)
+A4 for the spin-diluted value). The takeaway: what saturates PF is not single-spot eclipse
 but whether the two spots fail to *tile* the rotation (as J0030's same-hemisphere spots
 do, and J0740's anti-phased spots do not).
 *Used in:* v0.9.2 (second-team cross-check; `scripts/j0740_anchor.py`).
@@ -304,7 +359,7 @@ pulsed fraction, not inferred u; (ii) varying azimuthal spot separation (they lo
 the tiling mechanism is *their own* Appendix A aside ("occultation of one spot coincides with the
 maximum of the other"), undeveloped — and the Bauböck (2015) paper it cites does **not** actually
 contain it (verified full-text). NB: Zhao's bibliography mislabels "2015a"/"2015b" as the same ApJ 811, 144.
-*Verify yourself:* Fig. 7 + Ctrl-F "pulsed fraction" (absent).
+*Confirmed by full-text search:* the term "pulsed fraction" never appears; Fig. 7 is the geometry map.
 
 ### Zhao, Psaltis & Özel (2024) — counterintuitive radius–beaming Letter
 arXiv:2412.12284 (ApJ submitted). — Companion Letter to 2412.12283. Headline: fitting a
@@ -366,12 +421,22 @@ already listed below under deferred citations.)
 
 ## Deferred / future-work citations (not used yet)
 
+> Scope update (v0.9.10): **Doppler + aberration are no longer deferred** — they are
+> implemented in `src/mcrt/rotating.py` and validated against SD1c. What remains out of
+> scope is **oblateness** (the spin-flattened stellar shape), bounded at ~3% for J0740 by
+> [AlGendy & Morsink (2014)](#algendy--morsink-2014) and beaming-independent at first order.
+
 - **Ho & Lai (2001)**, MNRAS, 327, 1081 — magnetic atmospheres. The draft's
   "magnetic anisotropy" framing; deferred (the engine is Thomson-only).
-- **Morsink et al. (2007)**, ApJ, 663, 1244 — oblate-Schwarzschild; only if a
-  reviewer raises oblateness (oblateness/Doppler are out of project scope).
+- **Morsink et al. (2007)**, ApJ, 663, 1244 — the oblate-Schwarzschild formalism; cite
+  if a reviewer wants the full oblateness treatment rather than the AlGendy & Morsink bound.
 - **Psaltis & Özel (2014)**, ApJ, 792, 87 — special-relativistic / oblateness
-  corrections; same out-of-scope note.
+  corrections; the Doppler half is now covered by v0.9.10, the oblateness half stays deferred.
+- **Poutanen (2020)**, A&A, 640, A24.
+  [DOI: 10.1051/0004-6361/202037471](https://doi.org/10.1051/0004-6361/202037471) ·
+  arXiv:1909.05732 — a highly accurate *analytic* bending formula, the alternative Track B
+  considered before choosing exact numerical integration. Keep on hand if anyone asks for a
+  faster-than-quadrature bending map; verified 2026-07-07, not used in code.
 
 ---
 
@@ -381,11 +446,14 @@ already listed below under deferred citations.)
 - **What:** ASCII reference pulse profiles from the IM code for the SD1/SD2/OS1
   test problems, distributed as the supplementary archive `apjlab5968.tar.gz`
   attached to [Bogdanov et al. (2019)](#bogdanov-et-al-2019--paper-ii-l26) on
-  IOPscience. We use `SD1a_test_IM.txt` (phase in cycles; photon flux at 1 keV).
+  IOPscience. We use `SD1a_test_IM.txt` (1 Hz, the no-rotation benchmark) and
+  `SD1c_test_IM.txt` (200 Hz, the rotating benchmark for the v0.9.10 Doppler layer);
+  both are phase in cycles vs photon flux at 1 keV.
 - **How to get it:** download the "Supplementary data" archive from the article
   page ([10.3847/2041-8213/ab5968](https://doi.org/10.3847/2041-8213/ab5968)) and
   extract it to `data/l26_reference/`. Then `python scripts/code_comparison.py`
-  and the code-comparison test (`tests/test_pulse.py`) pick it up automatically.
+  (SD1a), `python scripts/c1_doppler_validate.py` (SD1c), and the code-comparison
+  test (`tests/test_pulse.py`) pick it up automatically.
 - **Why it is not committed:** the archive is third-party AAS material. AAS holds
   copyright on pre-2021-10-11 articles (L26 is 2019) unless gold-OA, and the
   archive's ReadMe grants *use* ("to facilitate testing of other independently
