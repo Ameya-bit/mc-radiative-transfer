@@ -20,6 +20,46 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.10 — Doppler at the real spin: the PF systematic re-routes into waveform shape
+*2026-07-07 · commit `<pending>`*
+
+**The frozen star is retired, and what looked like the headline collapsing turned out to be
+the headline moving. J0740 spins at 346.5 Hz — its spots move at β ≈ 0.127 c (Riley), and the
+special-relativistic Doppler boost + aberration layer (Track C, Bogdanov et al. 2019 S+D
+recipe, validated against the 200 Hz SD1c code-comparison waveform to 1.36%) cuts the
+bolometric ΔPF from +0.137 ± 0.003 to +0.037 (Riley, δ⁴; 37σ — Gate G2 fires) and +0.195 →
++0.061 (Miller). The mechanism is not aberration but the δ⁴ boost itself: a ±50% flux swing,
+phase-offset a quarter cycle from limb-darkening, that saturates both models' pulse extremes.
+But the systematic does not vanish — it re-routes. The iso-vs-real waveform-shape difference
+(RMS ≈ 0.10) and most of the fundamental-harmonic gap Δ(A1/A0) are invariant to spin, energy
+band, and time-delay warp: spin pumps a large common second harmonic into both models and
+degrades the min/max PF as a probe of beaming, exactly as J0030's eclipse geometry routed the
+systematic into shape. Two routers — geometry and spin — one conserved ~10% waveform-level
+systematic.**
+
+Three follow-on measurements pin the numbers. **(C3, band-limited)** NICER's calibrated band
+(0.3–1.5 keV) sits on the Wien tail of these soft spots (kT ≈ 0.084 keV ⇒ E/kT_obs ≈ 5–25),
+where Doppler acts as an effective temperature wobble amplified exponentially — the in-band
+boost exponent is ≈ 6.1 (vs the bolometric 4) — so in-band photon counting deepens the
+dilution to +0.019 ± 0.002 (Riley) / +0.045 ± 0.003 (Miller), with a further ±0.01 spread
+across band-edge/kT scans (`mcrt.rotating.BandSpectrum`/`band_boost`; wide-band limits
+recover δ³/δ⁴ exactly). **(C4, caveat audit)** The light-travel-time warp — exactly
+PF-invariant for one spot — is 2–5σ for the two-spot sums and *positive*, partially restoring
+the gap: the **all-geometry rotating residuals are +0.030 (Riley) / +0.056 (Miller)** in-band
+(+0.041 / +0.069 under δ⁴). Oblateness is bounded at ≤ 0.001 (AM14 first-order, 0.5σ) and
+stays a caveat. **(Shape routing)** All of the above leaves the shape metrics untouched.
+J0030 is unmoved throughout — rotation cannot un-eclipse a spot. Suite 111 green; ν → 0
+reproduces the frozen pipeline bit-for-bit.
+
+![Four-pulse routing figure: iso vs realistic at 0 Hz and 346.5 Hz — the amplitude gap (ΔPF) collapses while the shape gap persists](data/pulse_profile_doppler_routing.png)
+
+📐 **Full derivation:** [v0.9.10 — Doppler + Aberration Layer](docs/deep-dives/v0.9.10-doppler.md)
+(C1 layer + SD1c validation; C2 coupling + shape routing; C3 band-limited variant; C4 caveat
+audit and the delay escalation)
+
+**Next:** Track D (isotropic-scattering H(μ) transport validation) + Track E with rotation-on
+variants (tail sensitivity, robustness rows), then E1 number propagation → v1.0.0-rc, the paper.
+
 ### v0.9.9.1 — Exact Schwarzschild bending, enacted: the ~1% approximation was 2σ
 *2026-07-07 · commit `<pending>`*
 
