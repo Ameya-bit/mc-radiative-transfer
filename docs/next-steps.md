@@ -52,7 +52,11 @@ The sprint is done when every box below is checked:
   included, C4) **+0.030 (Riley) / +0.056 (Miller)**; the systematic **re-routes into waveform
   shape** (RMS ≈ 0.10, invariant to spin/band/warp), it does not vanish — framing: spin is a
   second router alongside geometry; oblateness bounded ≤ 0.001
-- [ ] Engine transport validated **exactly** against H(μ) (isotropic-scattering mode)
+- [x] Engine transport validated **exactly** against H(μ) (isotropic-scattering mode) — **Track D
+  done (v0.9.11)**, [deep-dive](deep-dives/v0.9.11-isotropic-transport.md): opt-in isotropic phase
+  function; τ = 10, 5 seeds, 4.1×10⁵ escaped → flux-space reduced **χ² = 0.70** (dof 17) vs H(μ)·μ;
+  Thomson control χ² = 1.49 (2.8%) = the ~1–3% phase-function sensitivity ⇒ H is **near-exact**,
+  not exact, for the real atmosphere
 - [ ] First-bin / clamped-tail sensitivity of ΔPF quantified (perturbation + H-tail splice)
 - [ ] Atmosphere-law robustness row: ΔPF repeated with an analytic limb-darkening law
 - [ ] Scope paragraphs drafted: bolometric-vs-band (item 6), boundary semantics (item 7)
@@ -220,18 +224,25 @@ quadrature generalized out of the C1 driver, flat-space closed form pinned in te
   +0.0011 (0.5σ) Riley, −0.00002 Miller. Residual oblate-bending remainder is OS-level,
   same order — one caveat sentence with these numbers.
 
-### Track D — Exact transport validation (attention item 2; small)
+### Track D — Exact transport validation (attention item 2; small) — ✅ **DONE (v0.9.11)**
 
-**D1.** Add an **isotropic-scattering sampler** as an opt-in phase-function choice in the engine
-(default Thomson untouched; ~30 min).
-**D2.** One thick-slab run (τ = 10, ~4×10⁵ escaped ⇒ ~3.4M injected, minutes — schedule when
-A2 frees cores).
-**D3.** Overlay Chandrasekhar H(μ): the match must be **exact within error bars** — this
-isolates and certifies the transport/geometry machinery with the phase function controlled,
-and quantitatively backs the item-7 "converges to the semi-infinite limit" sentence.
-Paper wording lands in Track F: the Thomson-vs-isotropic-H overlay is a **near-exact**
-reference (~1–3% phase-function sensitivity, Chandrasekhar Ch. X); never write "matches the
-exact solution" without that caveat.
+`src/mcrt/utils.py` `sample_isotropic_angle` + `monte_carlo.Simulation(phase_function=...)`;
+driver `scripts/d_isotropic_validate.py` → `data/d_isotropic_h.npz` + overlay figure;
+`tests/test_transport.py` (8 tests, suite **119 green**).
+[deep-dive](deep-dives/v0.9.11-isotropic-transport.md).
+
+**D1. ✅** Opt-in **isotropic-scattering** phase function (P(μ) = 1/2, μ uniform on [−1, 1]) via a
+`SCATTER_SAMPLERS` dispatch; default `"thomson"` is **bit-for-bit unchanged** (same sampler call,
+same RNG stream — asserted in tests), invalid names raise.
+**D2. ✅** One thick slab τ = 10, 5 seeds × 7×10⁵ injected (**4.1×10⁵ escaped**), ~80 s on 10 workers.
+**D3. ✅** The match is **exact within error** — but in **flux space**, not intensity space. The
+naïve I(μ) = counts/μ overlay fails (χ² = 11.7) on the attention-fix-8b **bin-center bias**
+(dividing ∫Iμ dμ by the bin center, a systematic that grows with N and masks the signal). Testing
+the raw escaping distribution against N·∫H(μ)μ dμ directly gives **flux-space reduced χ² = 0.70
+(dof 17, max residual 1.6σ)** — isotropic transport reproduces H(μ). The **Thomson control** (same
+machinery, physical dipole) sits at χ² = 1.49 (2.8% max deviation) = the ~1–3% phase-function
+sensitivity (Chandrasekhar Ch. X). Paper wording (Track F, item 7): the Thomson-vs-isotropic-H
+overlay is a **near-exact** reference; never write "matches the exact solution" without that caveat.
 
 ### Track E — Post-library quantifications (afternoon; each ≤ 1 h, all interpolation-cheap)
 
@@ -296,12 +307,12 @@ than any number does:
 | v0.9.8 | Production library + downstream re-runs + 8a/8b fixes + SHAPE_TAU rewording | A, E1 |
 | v0.9.9 | Exact bending: implementation, validation, measured ΔPF shift (gate G1) | B |
 | v0.9.10 | Doppler/aberration: implementation, validation, coupling + **shape routing** + **band-limited variant** + **caveat audit** (gate G2 + routing framing) | C1–C4 |
-| v0.9.11 | Isotropic-scattering H(μ) validation + tail sensitivity + robustness rows (**incl. rotation-on variants**) | D, E2, E3 |
+| v0.9.11 | Isotropic-scattering H(μ) validation (**Track D done**) + tail sensitivity + robustness rows (**incl. rotation-on variants**) | D ✅, E2, E3 |
 | v1.0.0-rc | Scope paragraphs merged, all numbers propagated, suite green → **start the paper** | F |
 
 Each lands with the usual README progress-log entry + deep-dive; commit refs backfilled per
-convention. Original priority **A > B > C > E2 > D > E3**; with A, B, and C (incl. C4) now
-landed the remaining order is **E2(rot) > D > E3(rot) > E1-last** — E1 propagates the routing
+convention. Original priority **A > B > C > E2 > D > E3**; with A, B, C (incl. C4), and **D** now
+landed the remaining order is **E2(rot) > E3(rot) > E1-last** — E1 propagates the routing
 framing and must wait for the numbers it propagates.
 
 ## Novelty position (unchanged; pending human verification)

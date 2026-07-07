@@ -20,6 +20,37 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.11 — Exact transport validation: the isotropic engine reproduces Chandrasekhar H(μ)
+*2026-07-07 · commit `<pending>`*
+
+**The transport core stops being an unchecked assumption. Every prior validation compared the
+engine to something itself approximate (the ~1% bending map, the NICER code comparisons, the
+linear Eddington law). There is exactly one place a closed-form *exact* answer exists for our
+geometry: a conservative semi-infinite atmosphere that scatters **isotropically** emits
+I(μ) ∝ Chandrasekhar H(μ). Track D adds an opt-in isotropic phase function (P(μ) = 1/2, default
+Thomson bit-for-bit unchanged), runs one thick slab (τ = 10, 5 seeds, 4.1×10⁵ escaped), and the
+emergent distribution matches H(μ)·μ with flux-space reduced χ² = 0.70 (dof 17, max residual
+1.6σ) — a clean match within Monte Carlo error. That certifies step sampling, boundaries, escape,
+the ∝μ Lambertian source, and the histogram, with the phase function held fixed.**
+
+The measurement had a trap worth recording. The naïve check — reconstruct I(μ) = counts/μ and
+compare to H — *fails* (χ² = 11.7, and the Thomson control looks better than isotropic), because
+dividing the per-bin flux ∫I(μ)μ dμ by the bin *center* mis-estimates I by O(Δμ²) — the
+attention-fix-8b bin-center bias, a systematic that grows with statistics and drowns the signal.
+The fix is to test what the MC measures directly: the raw escaping angular distribution vs
+N·∫H(μ)μ dμ, no reconstruction. The **Thomson control** — same machinery, physical dipole phase
+function — sits at χ² = 1.49 (2.8% max deviation): the ~1–3% phase-function sensitivity
+(Chandrasekhar Ch. X). So H is a **near-exact** reference for the real atmosphere, never the exact
+one — the wording guardrail the paper's transport paragraph (item 7) needs. Suite **119 green**.
+
+![Isotropic transport vs Chandrasekhar H(μ): isotropic residuals within ±2σ, Thomson control dips to −2.8σ near μ≈0.3 — the phase-function sensitivity](data/d_isotropic_h_overlay.png)
+
+📐 **Full derivation:** [v0.9.11 — Exact Transport Validation](docs/deep-dives/v0.9.11-isotropic-transport.md)
+(D1 isotropic sampler + opt-in wiring; D2 thick-slab run; D3 flux-space H(μ) certificate)
+
+**Next:** Track E with rotation-on variants (tail sensitivity E2, atmosphere-law robustness E3),
+then E1 number propagation → v1.0.0-rc, the paper.
+
 ### v0.9.10 — Doppler at the real spin: the PF systematic re-routes into waveform shape
 *2026-07-07 · commit `<pending>`*
 

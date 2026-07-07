@@ -38,6 +38,7 @@ from .theory import chandrasekhar_h, eddington_limb_darkening
 from .utils import (
     get_random_direction,
     rotate_vector,
+    sample_isotropic_angle,
     sample_step_size,
     sample_thomson_angle,
 )
@@ -72,6 +73,7 @@ __all__ = [
     "point_spot_flux",
     "pulsed_fraction",
     "rotate_vector",
+    "sample_isotropic_angle",
     "sample_step_size",
     "sample_thomson_angle",
     "spot_speed",

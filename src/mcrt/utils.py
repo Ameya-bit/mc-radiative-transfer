@@ -46,6 +46,30 @@ def sample_thomson_angle(rng=None):
         if rng.random() < p_mu / 1.5:  # max(p_mu) = 1.5
             return mu
 
+def sample_isotropic_angle(rng=None):
+    """
+    Sample the scattering-angle cosine for *isotropic* scattering:
+    P(mu) = 1/2 (constant), so mu = cos(theta) is uniform on [-1, 1].
+
+    Isotropic scattering redistributes photons uniformly over solid angle. It is
+    the phase function for which Chandrasekhar's H-function gives the *exact*
+    emergent specific intensity of a conservative semi-infinite atmosphere.
+    Swapping the engine onto it (from the default Thomson dipole
+    P(mu) = (3/4)(1 + mu^2), see :func:`sample_thomson_angle`) lets the transport
+    and geometry machinery be validated against a closed-form solution with the
+    phase function controlled — attention item 2 / Track D.
+
+    Args:
+        rng: Optional numpy.random.Generator. Defaults to global np.random.
+
+    Returns:
+        float: The sampled cosine of the scattering angle (mu).
+    """
+    if rng is None:
+        rng = np.random
+    return rng.uniform(-1.0, 1.0)
+
+
 def get_random_direction(rng=None):
     """
     Generate a random unit vector in 3D (isotropic distribution).

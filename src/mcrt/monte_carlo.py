@@ -1,5 +1,20 @@
 import numpy as np
-from .utils import sample_step_size, sample_thomson_angle, rotate_vector, get_random_direction
+from .utils import (
+    sample_step_size,
+    sample_thomson_angle,
+    sample_isotropic_angle,
+    rotate_vector,
+    get_random_direction,
+)
+
+# Opt-in scattering phase functions. "thomson" (the default) is the dipole
+# P(mu) = (3/4)(1 + mu^2) the atmosphere physically uses; "isotropic" is the
+# P(mu) = 1/2 phase function for which Chandrasekhar's H(mu) is the exact
+# emergent intensity, used to certify the transport machinery (Track D).
+SCATTER_SAMPLERS = {
+    "thomson": sample_thomson_angle,
+    "isotropic": sample_isotropic_angle,
+}
 
 class Photon:
     """
@@ -37,9 +52,19 @@ class Simulation:
     """
     Manages the Monte Carlo simulation of many photons.
     """
-    def __init__(self, tau_total, num_photons=1000, rng=None):
+    def __init__(self, tau_total, num_photons=1000, rng=None, phase_function="thomson"):
         self.tau_total = tau_total
         self.num_photons = num_photons
+        # Scattering phase function. Default "thomson" leaves every existing run
+        # bit-for-bit unchanged (same sampler, same RNG draws); "isotropic" is
+        # the opt-in Track D mode validated against Chandrasekhar H(μ).
+        if phase_function not in SCATTER_SAMPLERS:
+            raise ValueError(
+                f"phase_function must be one of {sorted(SCATTER_SAMPLERS)}, "
+                f"got {phase_function!r}"
+            )
+        self.phase_function = phase_function
+        self._scatter_sampler = SCATTER_SAMPLERS[phase_function]
         # An explicit Generator makes a run reproducible; convergence studies
         # pass per-run seed offsets. Default to a fresh Generator so each
         # Simulation is independent without touching global np.random state.
@@ -101,8 +126,9 @@ class Simulation:
                     self.results['absorbed_count'] += 1
                 
                 else:
-                    # 4. Scatter
-                    mu_scatter = sample_thomson_angle(rng=self.rng)
+                    # 4. Scatter (phase function selected at construction;
+                    # "thomson" default preserves the original RNG stream)
+                    mu_scatter = self._scatter_sampler(rng=self.rng)
                     p.scatter(mu_scatter, rng=self.rng)
             
             self.photons.append(p)
