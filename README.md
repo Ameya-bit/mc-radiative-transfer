@@ -52,7 +52,7 @@ one — the wording guardrail the paper's transport paragraph (item 7) needs. Su
 then E1 number propagation → v1.0.0-rc, the paper.
 
 ### v0.9.12 — The headline survives its two cheapest attacks: the tail model and the atmosphere law
-*2026-07-07 · commit `<pending>`*
+*2026-07-07 · commit `1b0a9ba`*
 
 **Two structural worries about the beaming curve that feeds ΔPF are now measured, and neither
 moves the result. First, the *grazing tail*: the library's two lowest-μ bins are its noisiest
