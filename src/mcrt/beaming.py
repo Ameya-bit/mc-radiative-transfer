@@ -26,16 +26,31 @@ def extract_intensity(escaped_mu, n_bins=20):
     return centers, intensity
 
 
-def fit_limb_darkening_slope(mu_centers, intensity, mu_floor=0.1):
-    """Best-fit linear law I(μ) = a(1 + bμ); return the normalized slope b.
+def fit_limb_darkening(mu_centers, intensity, mu_floor=0.1):
+    """Best-fit linear law I(μ) = a(1 + bμ); return the pair ``(a, b)``.
 
-    The μ→0 bins are excluded (mu_floor): grazing escapes are rare, so dividing
-    their tiny counts by a tiny μ is dominated by noise. Eddington predicts b = 1.5.
+    ``a`` is the fitted intercept (I at μ = 0) and ``b = slope / a`` is the
+    normalized limb-darkening slope. The μ→0 bins are excluded (mu_floor):
+    grazing escapes are rare, so dividing their tiny counts by a tiny μ is
+    dominated by noise. Eddington predicts b = 1.5.
+
+    Exposing ``a`` lets the library normalize a whole I(μ) curve by the fitted
+    intercept — a quantity averaged over ~18 bins — instead of a single noisy
+    edge bin, so the stored curve does not inherit that one bin's Monte Carlo
+    noise (attention-point fix 8a).
     """
     mask = mu_centers > mu_floor
     A = np.vstack([np.ones(mask.sum()), mu_centers[mask]]).T
     a, slope = np.linalg.lstsq(A, intensity[mask], rcond=None)[0]
-    return slope / a
+    return a, slope / a
+
+
+def fit_limb_darkening_slope(mu_centers, intensity, mu_floor=0.1):
+    """Normalized limb-darkening slope ``b`` of I(μ) = a(1 + bμ).
+
+    Thin wrapper over :func:`fit_limb_darkening` that drops the intercept.
+    """
+    return fit_limb_darkening(mu_centers, intensity, mu_floor)[1]
 
 
 def beaming_lookup(mu_centers, intensity) -> BeamingFunc:

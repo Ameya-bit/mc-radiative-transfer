@@ -28,7 +28,7 @@ data/*
 # macOS
 .DS_Store
 
-# professional development notes
+# personal notes
 notes/*
 research_contract/*
 
