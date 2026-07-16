@@ -21,9 +21,10 @@ The spot crosses fully behind the star, so this is an *eclipsing* geometry
 (F_min = 0, PF = 1); the test is the **profile shape** and the bending-set
 **eclipse width** (gravity lets us see ≈ 32° around the back on each side).
 
-Our only approximation relative to the IM code is the Beloborodov (2002) linear
-bending map (exact to ~1% for u ≲ 0.5), so agreement is expected at the ~1%
-level — worst at the grazing eclipse edges — rather than their 0.1%.
+The figure uses the exact Schwarzschild bending map (``ExactBending``), which
+matches the IM reference to ~0.1%; the Beloborodov (2002) linear map (exact to
+~1% for u ≲ 0.5) is also evaluated and reported for reference (~0.8%, worst at
+the grazing eclipse edges).
 
 Reference data: the L26 supplementary archive (apjlab5968.tar.gz), file
 ``SD1a_test_IM.txt`` — two columns: rotational phase (cycles) and photon flux
@@ -35,7 +36,7 @@ Run from the repository root:  python scripts/code_comparison.py
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mcrt import point_spot_flux
+from mcrt import ExactBending, point_spot_flux
 
 # SD1a parameters (Bogdanov et al. 2019, ApJL 887 L26, Table 1).
 M_SUN_KM = 1.47662          # GM_sun/c² in km
@@ -47,6 +48,7 @@ COMPACTNESS = 2.0 * M_SUN_KM * NS_MASS_MSUN / NS_RADIUS_KM   # u = 2GM/Rc² ≈ 
 
 REFERENCE_PATH = "data/l26_reference/SD1a_test_IM.txt"
 FIGURE_PATH = "data/pulse_profile_code_comparison.png"
+RESULTS_PATH = "data/code_comparison.npz"
 
 
 def load_reference(path: str = REFERENCE_PATH):
@@ -55,16 +57,17 @@ def load_reference(path: str = REFERENCE_PATH):
     return ref[:, 0], ref[:, 1]
 
 
-def our_profile_at(phase_cycles: np.ndarray) -> np.ndarray:
+def our_profile_at(phase_cycles: np.ndarray, bending: ExactBending | None = None) -> np.ndarray:
     """Our point-spot flux at the reference phases (both peak at phase 0)."""
     i, theta = np.deg2rad(INCLINATION_DEG), np.deg2rad(COLATITUDE_DEG)
     phi = 2.0 * np.pi * phase_cycles                      # cycles → radians
-    return point_spot_flux(phi, i, theta, COMPACTNESS)
+    return point_spot_flux(phi, i, theta, COMPACTNESS, bending=bending)
 
 
 def main():
     phase, f_ref = load_reference()
-    f_ours = our_profile_at(phase)
+    f_ours = our_profile_at(phase, bending=ExactBending(COMPACTNESS))
+    f_linear = our_profile_at(phase)                      # Beloborodov map, for reference
 
     # Normalize each curve to its own peak: ours is in arbitrary units, theirs is
     # an absolute photon flux. At 1 Hz + isotropic the normalized shapes coincide,
@@ -74,6 +77,8 @@ def main():
     resid = ours_n - ref_n
     max_abs = float(np.abs(resid).max())
     rms = float(np.sqrt((resid ** 2).mean()))
+    resid_linear = f_linear / f_linear.max() - ref_n
+    max_abs_linear = float(np.abs(resid_linear).max())
 
     fig, (ax, ax_r) = plt.subplots(
         2, 1, figsize=(8, 6.6), height_ratios=[3, 1], sharex=True, layout="constrained"
@@ -82,7 +87,7 @@ def main():
     ax.plot(phase, ref_n, "-", lw=2, color="#1f77b4",
             label="IM code reference (Bogdanov+ 2019, SD1a)")
     ax.plot(phase[::3], ours_n[::3], "o", ms=4.5, color="#d62728",
-            label="this work (Beloborodov bending)")
+            label="this work (exact Schwarzschild bending)")
     ax.set_ylabel("normalized flux  F(φ) / F_max")
     ax.set_title(f"SD1a waveform vs. NICER code-comparison reference  "
                  f"(u={COMPACTNESS:.3f}, i=θ_s=90°)")
@@ -94,10 +99,22 @@ def main():
     ax_r.set_xlabel("rotational phase  φ / 2π  [cycles]")
     ax_r.set_ylabel("Δ  [% of peak]")
     ax_r.set_title(f"this work − reference   (max |Δ| = {100*max_abs:.2f}%, "
-                   f"RMS = {100*rms:.2f}% — worst at the grazing eclipse edge)")
+                   f"RMS = {100*rms:.2f}%; linear map gives {100*max_abs_linear:.2f}%)")
 
     fig.savefig(FIGURE_PATH, dpi=130)
     print(f"saved {FIGURE_PATH}")
+
+    np.savez(
+        RESULTS_PATH,
+        phase=phase,
+        resid_exact=resid,
+        resid_linear=resid_linear,
+        max_abs_exact=np.float64(max_abs),
+        rms_exact=np.float64(rms),
+        max_abs_linear=np.float64(max_abs_linear),
+        compactness=np.float64(COMPACTNESS),
+    )
+    print(f"saved {RESULTS_PATH}")
 
     vis_ref = (ref_n > 0).mean()
     vis_ours = (ours_n > 0).mean()

@@ -47,7 +47,14 @@ from mcrt import (
     pulsed_fraction,
     travel_time_delay,
 )
-from anchor_lib import N_PHASE, SHAPE_TAU, Spot, multi_spot_flux, shape_tau_index
+from anchor_lib import (
+    N_PHASE,
+    SHAPE_TAU,
+    Spot,
+    multi_spot_flux,
+    shape_tau_index,
+    waveform_shape_change,
+)
 from c2_doppler_coupling import J0740_SPIN_HZ, RADIUS_KM
 from c3_band_doppler import anchor_band
 import j0740_anchor as j0740
@@ -120,6 +127,32 @@ def delay_audit(seed_curves, mu_centers):
     return rows
 
 
+def shape_audit(pooled_curve, mu_centers):
+    """Warp-inclusive waveform-shape difference (peak-normalized RMS), pooled τ=10 curve.
+
+    Persists the paper's 'shape RMS holds ≈0.10 across the light-travel warp' leg:
+    isotropic vs realistic multi-spot flux, both with the eq. 18–19 phase warp applied,
+    at 346.53 Hz under the δ⁴ and band-photon treatments.
+    """
+    print("\n=== C4.3 warp-inclusive waveform-shape difference (peak-normalized) ===")
+    print(f"{'anchor':<34}{'treatment':>12}{'shape RMS':>12}{'max-local':>12}")
+    rows = {}
+    beaming = beaming_lookup(mu_centers, pooled_curve)
+    for anchor in j0740.ANCHORS:
+        bend = ExactBending(anchor.compactness)
+        r_km = RADIUS_KM[anchor.label]
+        key = "riley" if "Riley" in anchor.label else "miller"
+        for tag, rot in (("d4", Rotation(J0740_SPIN_HZ, r_km)),
+                         ("band_ph", Rotation(J0740_SPIN_HZ, r_km, photon_flux=True,
+                                              band=anchor_band(anchor.label)))):
+            iso = delayed_multi_spot_flux(anchor, None, bend, rot, r_km, J0740_SPIN_HZ)
+            real = delayed_multi_spot_flux(anchor, beaming, bend, rot, r_km, J0740_SPIN_HZ)
+            rms, max_local = waveform_shape_change(iso, real)
+            rows[f"{key}_warp_shape_{tag}"] = (rms, max_local)
+            print(f"{anchor.label:<34}{tag:>12}{rms:>12.4f}{max_local:>12.4f}")
+    return rows
+
+
 def oblate_perturbed(anchor, radius_km):
     """(perturbed anchor, perturbed radius, diagnostics) under AM14 first order.
 
@@ -186,6 +219,7 @@ def main():
 
     delay_rows = delay_audit(seed_curves, mu)
     oblate_rows = oblateness_audit(seed_curves, mu)
+    shape_rows = shape_audit(d["intensity_by_tau"][ti10], mu)
 
     print("\n" + "=" * 78)
     print("C4 verdict (all shifts paired per seed; σ = seed error of ΔPF):")
@@ -213,6 +247,9 @@ def main():
         payload[f"j0740_{name}_o2"] = np.float64(o2)
         payload[f"j0740_{name}_ombar2"] = np.float64(ombar2)
         payload[f"j0740_{name}_dr_over_r"] = np.float64(dr)
+    for name, (rms, max_local) in shape_rows.items():
+        payload[f"j0740_{name}_rms"] = np.float64(rms)
+        payload[f"j0740_{name}_max"] = np.float64(max_local)
     np.savez(RESULTS_PATH, **payload)
     print(f"\n✓ C4 results saved to {RESULTS_PATH}")
 

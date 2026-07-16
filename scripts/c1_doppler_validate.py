@@ -66,6 +66,7 @@ SPIN_SD1C_HZ = 200.0               # SD1c: same geometry, rotating
 REF_SD1A = "data/l26_reference/SD1a_test_IM.txt"
 REF_SD1C = "data/l26_reference/SD1c_test_IM.txt"
 FIGURE_PATH = "data/pulse_profile_doppler_sd1c.png"
+RESULTS_PATH = "data/c1_doppler_validate.npz"
 
 
 def _emission_flux(phi: np.ndarray, spin_hz: float) -> np.ndarray:
@@ -139,15 +140,21 @@ def _asymmetry(flux_n: np.ndarray) -> float:
 
 
 def main():
+    payload = {}
     for label, spin, path in [("SD1a (1 Hz)", SPIN_SD1A_HZ, REF_SD1A),
                               ("SD1c (200 Hz)", SPIN_SD1C_HZ, REF_SD1C)]:
         ref = np.loadtxt(path)
         phase, f_ref = ref[:, 0], ref[:, 1]
         beta = spot_speed(spin, NS_RADIUS_KM, COLATITUDE, COMPACTNESS)
+        key = label.split()[0].lower()                    # "sd1a" / "sd1c"
+        payload[f"{key}_beta"] = np.float64(beta)
         print(f"{label}:  β = {beta:.5f}")
         for tag, wd in [("Doppler+aberration+delay", True), ("delay omitted (prod. regime)", False)]:
             ours_n, ref_n, max_abs, rms = _residual_stats(
                 monochromatic_flux(phase, spin, with_time_delay=wd), f_ref)
+            case = "delay" if wd else "nodelay"
+            payload[f"{key}_{case}_max_abs"] = np.float64(max_abs)
+            payload[f"{key}_{case}_rms"] = np.float64(rms)
             print(f"    {tag:<30}  max|Δ| = {100*max_abs:5.3f}%   RMS = {100*rms:5.3f}%   "
                   f"asym: ours {100*_asymmetry(ours_n):5.2f}% / ref {100*_asymmetry(ref_n):5.2f}%")
 
@@ -180,6 +187,9 @@ def main():
 
     fig.savefig(FIGURE_PATH, dpi=130)
     print(f"saved {FIGURE_PATH}")
+
+    np.savez(RESULTS_PATH, **payload)
+    print(f"saved {RESULTS_PATH}")
 
 
 if __name__ == "__main__":

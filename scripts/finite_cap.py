@@ -48,6 +48,14 @@ from j0030_anchor import RILEY as J0030_RILEY, MILLER as J0030_MILLER
 from j0740_anchor import RILEY as J0740_RILEY, MILLER as J0740_MILLER
 
 FIGURE_PATH = "data/finite_cap.png"
+RESULTS_PATH = "data/finite_cap.npz"
+
+
+def _anchor_key(label: str) -> str:
+    """'Riley 2021 (X-PSI ST-U)' -> 'j0740_riley' (2021 = J0740, 2019 = J0030)."""
+    star = "j0740" if "2021" in label else "j0030"
+    team = "riley" if "Riley" in label else "miller"
+    return f"{star}_{team}"
 
 # Sub-point tiling resolution. (n_rings, n_az) = 5 rings × 16 azimuths = 80 sub-points
 # per cap is well past convergence for ζ ≲ 0.2 rad (verified in print_summary).
@@ -239,7 +247,23 @@ def print_summary(r: Result):
           "point reduction is an accurate, now-bounded approximation, not an unverified caveat.")
 
 
+def save_results(r: Result, path=RESULTS_PATH):
+    """Persist the point-vs-finite ΔPF numbers backing the paper's caveat sentence."""
+    payload = {"zeta_axis": r.zeta_axis}
+    for label in r.point:
+        key = _anchor_key(label)
+        payload[f"{key}_point"] = np.float64(r.point[label])
+        payload[f"{key}_finite"] = np.float64(r.finite[label])
+        payload[f"{key}_converged"] = np.float64(r.converged[label])
+        payload[f"{key}_cap_radii"] = np.asarray(r.cap_radii[label], dtype=np.float64)
+    for label, sweep in r.sweeps.items():
+        payload[f"{_anchor_key(label)}_sweep"] = np.asarray(sweep, dtype=np.float64)
+    np.savez(path, **payload)
+    print(f"✓ results saved to {path}")
+
+
 if __name__ == "__main__":
     result = run()
     plot_result(result)
+    save_results(result)
     print_summary(result)
