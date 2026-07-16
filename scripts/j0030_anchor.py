@@ -18,9 +18,10 @@ and even summing the two published spots the flux still touches zero (they hug t
 same pole and do not tile the cycle). A zero minimum pins the pulsed fraction at
 PF = 1 for *both* beamings, so the **pulsed-fraction** systematic saturates to ΔPF ≈ 0.
 
-This is not a null finding — it is the same physics Rung C already showed: ΔPF is
-large at intermediate geometries and vanishes at near-saturated ones (the Rung C
-"high-contrast" case gave only +0.018). J0030 sits squarely in that saturated corner.
+This is not a null finding — it is the same physics the invented-geometry sweep
+(``beaming_pulse_sweep.py``) already showed: ΔPF is large at intermediate geometries
+and vanishes at near-saturated ones (its "high-contrast" case gave only +0.018).
+J0030 sits squarely in that saturated corner.
 The systematic does not disappear; it moves out of the pulsed fraction and into the
 **waveform shape** — assuming isotropy distorts the visible pulse by several percent
 RMS. So the systematic's *observability* is geometry-dependent: PF-visible for
@@ -28,10 +29,10 @@ intermediate geometries, shape-visible at J0030.
 
 Idealization note. Real spots are extended and sit on an unpulsed background, so the
 true minimum is non-zero rather than a hard eclipse. We do not model a background
-(it would be a tuned knob); panel C shows that *were* one present, a PF systematic
-would re-emerge — and with the *opposite* sign to Rung C, because J0030's spots only
-ever reach modest emission angles (μ ≲ 0.45), so limb darkening dims their peak
-instead of sharpening the contrast.
+(it would be a tuned knob); panel C shows that *were* one present, a **positive** PF
+systematic would re-emerge, growing with the assumed background level (+0.03 to +0.14
+for 5–30% of the isotropic peak) — the same sign as the invented-geometry sweep and
+the J0740 anchor.
 
 Built here in the script with no change to the verified ``mcrt.pulse`` core: each
 spot is a :func:`mcrt.pulse.compute_profile` call, a spot at a different longitude is
@@ -167,7 +168,7 @@ def plot_result(tau_values, results, path=FIGURE_PATH):
     ax_wave.legend(fontsize=8)
     ax_wave.grid(True, alpha=0.3)
 
-    # C — caveat: a background would un-saturate PF and expose a sign-flipped systematic.
+    # C — caveat: a background would un-saturate PF and expose a positive systematic.
     for anchor in ANCHORS:
         r, c = results[anchor.label], colors[anchor.label]
         ax_bg.plot(BACKGROUND_FRACS, r["delta_pf_bg"], "o-", color=c, label=anchor.label)
@@ -175,7 +176,7 @@ def plot_result(tau_values, results, path=FIGURE_PATH):
     ax_bg.set_xlabel("Assumed unpulsed background (fraction of peak)")
     ax_bg.set_ylabel(r"$\Delta\mathrm{PF}$ if de-saturated")
     ax_bg.set_title(f"Caveat: PF systematic vs. background\n(τ={SHAPE_TAU:g}; "
-                    "negative — opposite to Rung C)")
+                    "positive, growing with background)")
     ax_bg.legend(fontsize=8)
     ax_bg.grid(True, alpha=0.3)
 
@@ -200,7 +201,7 @@ def save_results(tau_values, results, path=RESULTS_PATH):
 
 def print_summary(tau_values, results):
     print("\n" + "=" * 74)
-    print("Rung D — beaming swap at PSR J0030+0451's published geometry")
+    print("J0030 anchor — beaming swap at PSR J0030+0451's published geometry")
     print("=" * 74)
     for anchor in ANCHORS:
         r = results[anchor.label]
@@ -218,7 +219,8 @@ def print_summary(tau_values, results):
               f"{r['delta_pf_bg'][1]:+.3f} … {r['delta_pf_bg'][-1]:+.3f}")
     print("\nReading: J0030's same-hemisphere spots eclipse, so the pulsed fraction is "
           "saturated\nand blind to the beaming systematic — exactly the near-saturated "
-          "corner where Rung C\nalso found ΔPF→0. The systematic instead reshapes the "
+          "corner where the\ninvented-geometry sweep also found ΔPF→0. The systematic "
+          "instead reshapes the "
           "visible waveform (a few % RMS),\nso its observability is geometry-dependent: "
           "PF-visible mid-geometry, shape-visible here.")
 

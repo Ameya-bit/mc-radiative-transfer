@@ -63,7 +63,7 @@ def main():
     print(f"A3 — downstream ΔPF ± σ from {n_seeds} per-seed library curves\n")
 
     # --- J0740: the live pulsed-fraction systematic (the headline) ---
-    print("=== J0740 (non-eclipsing): ΔPF(τ) = PF_real − PF_iso ===")
+    print("=== J0740 (tiling, PF live): ΔPF(τ) = PF_real − PF_iso ===")
     print(f"{'anchor':<34}{'ΔPF(τ=10) ± σ':>22}{'ΔPF(τ) peak':>18}")
     for anchor in j0740.ANCHORS:
         m, s = per_seed_metric(j0740, anchor, tau, mu, seed_curves, "delta_pf")

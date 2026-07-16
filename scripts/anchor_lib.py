@@ -1,7 +1,8 @@
 """Shared two-spot machinery for real-star beaming-swap anchors.
 
-Both real-star anchor scripts — :mod:`j0030_anchor` (eclipsing, same-hemisphere
-spots) and :mod:`j0740_anchor` (non-eclipsing, anti-phased spots) — reduce a
+Both real-star anchor scripts — :mod:`j0030_anchor` (same-hemisphere spots whose
+summed flux touches zero) and :mod:`j0740_anchor` (anti-phased spots that tile the
+rotation, keeping the summed flux off zero) — reduce a
 published fit to point spots and synthesize the star's pulse the same way:
 
     * each spot is one :func:`mcrt.compute_profile` call (the verified core),
@@ -108,10 +109,11 @@ def single_spot_min_visible_mu(inclination, colatitude, compactness,
                                n_phase=N_PHASE, bending=None):
     """Smallest emission angle μ = cos α a *visible* single spot reaches.
 
-    For a non-eclipsing but grazing geometry (J0740) this is the tiny but
-    positive μ at the faint phase — the spot skims the limb without setting,
-    which is why F_min is small yet non-zero. Returns ``nan`` if the spot is
-    fully eclipsed at every phase (it never happens for the anchors used here).
+    For a grazing geometry (J0740 under the linear map) this is the tiny but
+    positive μ at the faint phase; under exact bending J0740's spots do set
+    briefly, and the minimum is taken over the *visible* phases only. Returns
+    ``nan`` if the spot is fully eclipsed at every phase (it never happens for
+    the anchors used here).
 
     ``bending`` selects the light-bending map (``None`` = linear default; an
     :class:`mcrt.bending.ExactBending` uses the exact Schwarzschild map), keeping
@@ -142,10 +144,10 @@ def delta_pf_vs_background(iso_flux, real_flux, bg_fracs=BACKGROUND_FRACS):
     """ΔPF as a common unpulsed background lifts the minimum of both curves.
 
     Adds a common absolute background B (a fraction of the isotropic peak) to
-    both curves and reports ΔPF(B). Used as a *caveat* panel for the eclipsing
-    star (where B un-saturates the pinned PF) and as a *robustness* panel for the
-    non-eclipsing star (where a realistic background only dilutes the already-live
-    ΔPF). We do not pick a B — this only shows the dependence.
+    both curves and reports ΔPF(B). Used as a *caveat* panel for the saturated
+    star, J0030 (where B un-saturates the pinned PF) and as a *robustness* panel
+    for the tiling star, J0740 (where a realistic background only dilutes the
+    already-live ΔPF). We do not pick a B — this only shows the dependence.
     """
     f_scale = iso_flux.max()
 

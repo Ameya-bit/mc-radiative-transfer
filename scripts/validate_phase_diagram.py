@@ -19,7 +19,7 @@ Two tiers, from the project roadmap (`docs/next-steps.md`, step 2):
    We confirm the *engine's* eclipse (from ``single_spot_eclipsed_fraction`` via
    the simulated visibility mask) flips precisely at this analytic condition,
    across a grid of (i, θ, u). This is the same closed-form check as the v0.8.0
-   Rung-A benchmark, now swept over the plane.
+   analytic visibility benchmark, now swept over the plane.
 
 2. **Two-spot tier (Poutanen & Beloborodov 2006, Fig. 5).** For an antipodal pair
    the secondary's geometry mirrors the primary: cos ψ₂(φ) = −cos ψ₁(φ). With the

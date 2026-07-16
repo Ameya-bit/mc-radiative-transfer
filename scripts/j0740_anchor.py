@@ -1,4 +1,4 @@
-"""Second real-star anchor: the beaming swap at PSR J0740+6620, where it does NOT eclipse.
+"""Second real-star anchor: the beaming swap at PSR J0740+6620, where PF stays live.
 
 v0.9.1 planted the isotropic→realistic beaming swap at PSR J0030+0451 and found the
 pulsed-fraction systematic *saturated* to ΔPF ≈ 0: J0030's two spots hug the same pole,
@@ -12,11 +12,11 @@ at the other end of the NICER mass–radius sample.
 
 The result — and why J0740 is the complement of J0030. Riley's fit places J0740's two
 hot spots in *opposite* hemispheres (colatitudes 77° and 108°) viewed almost edge-on
-(i ≈ 87.6°). With its extreme compactness (u ≈ 0.494) light bending lets us see far
-enough around the back that **neither spot ever sets** — each only grazes the limb
-(μ_min ≈ 0.005). And because the spots are ~half a cycle apart in azimuth (Δφ ≈ 0.44),
-they *tile* the rotation: when one is at the limb the other faces us, so the summed
-flux never falls near zero (floor F_min/F_max ≈ 0.70). The isotropic pulsed fraction is
+(i ≈ 87.6°). Even with its extreme compactness (u ≈ 0.494) each spot does slip behind
+the star briefly — ≈14% of the cycle under exact Schwarzschild bending (the linear map
+had hidden this eclipse entirely). But because the spots are ~half a cycle apart in
+azimuth (Δφ ≈ 0.44), they *tile* the rotation: when one is hidden the other faces us,
+so the summed flux never falls near zero (floor F_min/F_max ≈ 0.71). The isotropic pulsed fraction is
 therefore low and far from saturation (PF ≈ 0.18), leaving ample headroom. Swapping in
 the realistic beaming raises it directly: **ΔPF = +0.137 ± 0.003 at τ ≈ 10** (production
 library, exact Schwarzschild bending), the same sign, size, and τ-dependence v0.9.0 found
@@ -24,15 +24,15 @@ on invented geometries — now on a published star and *visible in the pulsed fr
 
 Both teams agree (the cross-check anchor). Miller's independent fit agrees with Riley on
 M, R, inclination, anti-phasing, and the two-circular-spot model, but places the spots
-essentially *on the equator* (colatitude ≈ 92°). There each spot's *center* does dip
-behind the star for ~21% of the cycle — yet because the two spots are anti-phased, the
+essentially *on the equator* (colatitude ≈ 92°). There each spot's *center* dips
+behind the star for ~23% of the cycle — yet because the two spots are anti-phased, the
 eclipses fall at opposite phases and the *combined* pulse still never reaches zero
 (floor ≈ 0.63). So PF stays unsaturated for Miller too, and the swap lands an even larger
 **ΔPF = +0.195 ± 0.005 at τ ≈ 10**. The headline is therefore robust to the choice of team:
 at J0740 the beaming systematic is a +0.137…+0.195 pulsed-fraction effect either way.
 
 The discriminator, made precise. The thing that flips J0030's verdict is *not* whether a
-single spot eclipses — Miller's J0740 spots eclipse 21% each and still leave a live ΔPF.
+single spot eclipses — Miller's J0740 spots eclipse ~23% each and still leave a live ΔPF.
 It is whether the two spots **tile** the rotation. J0030's spots hug the *same* far
 hemisphere and each is hidden ~45% of the cycle, so even anti-phased their visible
 windows leave a dark gap: the summed flux touches zero, PF pins at 1, ΔPF ≈ 0, and the
@@ -103,7 +103,7 @@ RILEY = Anchor(
 #   spot 1: θc1 = 1.600 rad (91.67°), Δθ1 = 0.098 rad, kT1 = 0.094 keV
 #   spot 2: θc2 = 1.612 rad (92.36°), Δθ2 = 0.096 rad, kT2 = 0.094 keV (equal temp)
 # Δφ2 = 0.558 cyc (anti-phased). Equatorial spots + equatorial observer ⇒ each spot's
-# CENTER dips behind the star ~21% of the cycle. But anti-phasing puts those eclipses at
+# CENTER dips behind the star ~23% of the cycle (exact bending). But anti-phasing puts those eclipses at
 # opposite phases, so the combined pulse still never reaches zero (floor ≈ 0.63): PF stays
 # unsaturated and ΔPF is large (+0.195) — the same regime as Riley, not J0030. A useful
 # second-team confirmation that J0740's systematic is PF-visible regardless of the fit.
@@ -126,9 +126,9 @@ ANCHORS = (RILEY, MILLER)
 def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau, bending=None):
     """ΔPF(τ) (the headline) plus the visibility numbers that explain its size.
 
-    Both J0740 anchors keep PF unsaturated — Riley because no spot sets, Miller because
-    the anti-phased spots tile the cycle even though each center dips behind ~21% of the
-    time — so ΔPF is a live pulsed-fraction signal for both. The eclipse fraction and
+    Both J0740 anchors keep PF unsaturated — the anti-phased spots tile the cycle even
+    though each dips behind the star (≈14% Riley, ≈23% Miller of the cycle, exact
+    bending) — so ΔPF is a live pulsed-fraction signal for both. The eclipse fraction and
     flux floor returned alongside it are what make that statement checkable.
 
     ``bending`` selects the light-bending map: ``None`` is Beloborodov's linear default
@@ -180,7 +180,7 @@ def sweep_anchor(anchor, tau_values, mu_centers, intensity_by_tau, bending=None)
 
 
 def plot_result(tau_values, results, path=FIGURE_PATH):
-    """A: ΔPF(τ) — the live PF systematic (headline). B: the non-eclipsing pulse.
+    """A: ΔPF(τ) — the live PF systematic (headline). B: the tiling two-spot pulse.
     C: ΔPF vs background — robustness of the headline."""
     fig, (ax_pf, ax_wave, ax_bg) = plt.subplots(1, 3, figsize=(16, 4.6))
     colors = {"Riley 2021 (X-PSI ST-U)": "#2c7fb8",
@@ -213,7 +213,7 @@ def plot_result(tau_values, results, path=FIGURE_PATH):
     ax_wave.axhline(0.0, color="#bdc3c7", lw=0.8)
     ax_wave.set_xlabel("Rotational phase (cycles)")
     ax_wave.set_ylabel(r"Normalized flux $F(\phi)/F_{\max}$")
-    ax_wave.set_title(f"Non-eclipsing two-spot pulse — {anchor.label}\n"
+    ax_wave.set_title(f"Tiling two-spot pulse — {anchor.label}\n"
                       f"(floor $F_{{\\min}}/F_{{\\max}}={r['flux_floor']:.2f}>0$)")
     ax_wave.legend(fontsize=8)
     ax_wave.grid(True, alpha=0.3)
@@ -255,7 +255,7 @@ def save_results(tau_values, results, path=RESULTS_PATH):
 
 def print_summary(tau_values, results):
     print("\n" + "=" * 74)
-    print("Rung D′ — beaming swap at PSR J0740+6620 (the non-eclipsing complement)")
+    print("J0740 anchor — beaming swap at PSR J0740+6620 (the tiling complement of J0030)")
     print("=" * 74)
     for anchor in ANCHORS:
         r = results[anchor.label]
@@ -280,7 +280,7 @@ def print_summary(tau_values, results):
           "unsaturated, and the beaming systematic lands directly in the pulsed fraction —\n"
           "ΔPF = +0.137 (Riley) to +0.195 (Miller), the same effect v0.9.0 found on invented\n"
           "geometries, now on a real star and confirmed by both teams. (Miller's spots even\n"
-          "dip behind 21% each, but anti-phasing keeps the pulse off zero.) Contrast J0030:\n"
+          "dip behind ~23% each, but anti-phasing keeps the pulse off zero.) Contrast J0030:\n"
           "same-hemisphere spots, deep 45% eclipses that don't tile → PF saturates, ΔPF ≈ 0,\n"
           "systematic in shape. Tiling — not single-spot eclipse — decides where it shows up.")
 
