@@ -11,10 +11,19 @@ dist/
 .venv/
 venv/
 
-# Simulation outputs: ignore raw/bulk data, keep committed result plots
+# Simulation outputs: keep result plots AND the paper-backing npz evidence base
+# (Zenodo archives this repo via GitHub, so the npz artifacts must be tracked).
+# data/l26_reference/ and data/apjlab5968.tar.gz are AAS supplementary material
+# (Bogdanov et al. 2019) whose redistribution is not granted — they stay ignored;
+# see REPRODUCING.md for how to re-download them.
 data/*
 !data/.gitkeep
 !data/*.png
+!data/*.npz
+
+# Third-party figure scan (Poutanen & Beloborodov 2006) used only as a redraw
+# reference — not redistributable
+docs/paper/Poutanen2006angle.jpeg
 
 # LaTeX build artifacts
 *.aux
@@ -24,6 +33,10 @@ data/*
 *.synctex.gz
 *.fdb_latexmk
 *.toc
+*.bbl
+*.blg
+docs/paper/paper_overleaf.zip
+docs/paper/paper_template.pdf
 
 # macOS
 .DS_Store
