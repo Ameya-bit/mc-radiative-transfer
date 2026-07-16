@@ -20,6 +20,35 @@ equally in all directions; this project tests how wrong that assumption is.
 and the technical details tucked underneath, plus a link to its deep dive. The 10-week project
 plan in the [Timeline](#timeline) maps calendar weeks onto these versions.*
 
+### v0.9.12 — The headline survives its two cheapest attacks: the tail model and the atmosphere law
+*2026-07-07 · commit `1b0a9ba`*
+
+**Two structural worries about the beaming curve that feeds ΔPF are now measured, and neither
+moves the result. First, the *grazing tail*: the library's two lowest-μ bins are its noisiest
+(per-seed scatter 5.4% and 3.2%, vs ~0.6% just above μ=0.1) and the lookup clamps them flat below
+μ=0.1 — an arbitrary choice. Resampling those bins within their measured σ, and replacing the flat
+clamp with a physically-motivated Chandrasekhar-H-shaped tail, shifts ΔPF by ≤ 0.006, at or below
+the ±0.003 seed error bar — the tail is not load-bearing. Second, the *atmosphere law*: repeating
+the J0740 swap under the Eddington (1+1.5μ) and Chandrasekhar H(μ) limb-darkening laws reproduces
+the same positive, spin-diluted signal (+0.13…+0.20 static, +0.03…+0.06 at 346.5 Hz), with the
+magnitude tracking each law's limb-darkening slope b. The effect is a property of limb darkening,
+not of the Thomson slab.**
+
+Both are run static *and* at the real 346.5 Hz — because aberration samples the beaming at
+μ' = δ cos α, reaching into the tail at faint phases, the spin-diluted number carries its own tail
+sensitivity (the one place it shows: Miller at spin, |δ(ΔPF)| = 0.006, where the grazing spots let
+aberration pull the tail into the min/max statistic). Both drivers reproduce the exact-bending
+headline (+0.137/+0.195 static, +0.037/+0.061 at spin) as their reference case, so the perturbation
+is the only thing changing. Pure interpolation + geometry, seconds each. Suite **127 green**.
+
+![E3: ΔPF under three independent limb-darkening laws (Thomson slab, Eddington, Chandrasekhar H), both anchors, frozen vs 346.5 Hz — positive and PF-live everywhere, magnitude tracking slope b](data/e3_atmosphere_laws.png)
+
+📐 **Full derivation:** [v0.9.12 — Tail Sensitivity + Atmosphere-Law Robustness](docs/deep-dives/v0.9.12-tail-and-robustness.md)
+(E2 bin-resampling σ + H-tail splice; E3 three-law robustness rows, both spins)
+
+**Next:** E1 — propagate the numbers and three-part routing framing through README/anchor scripts,
+then Track F scope paragraphs → v1.0.0-rc, the paper.
+
 ### v0.9.11 — Exact transport validation: the isotropic engine reproduces Chandrasekhar H(μ)
 *2026-07-07 · commit `<pending>`*
 
@@ -50,35 +79,6 @@ one — the wording guardrail the paper's transport paragraph (item 7) needs. Su
 
 **Next:** Track E with rotation-on variants (tail sensitivity E2, atmosphere-law robustness E3),
 then E1 number propagation → v1.0.0-rc, the paper.
-
-### v0.9.12 — The headline survives its two cheapest attacks: the tail model and the atmosphere law
-*2026-07-07 · commit `1b0a9ba`*
-
-**Two structural worries about the beaming curve that feeds ΔPF are now measured, and neither
-moves the result. First, the *grazing tail*: the library's two lowest-μ bins are its noisiest
-(per-seed scatter 5.4% and 3.2%, vs ~0.6% just above μ=0.1) and the lookup clamps them flat below
-μ=0.1 — an arbitrary choice. Resampling those bins within their measured σ, and replacing the flat
-clamp with a physically-motivated Chandrasekhar-H-shaped tail, shifts ΔPF by ≤ 0.006, at or below
-the ±0.003 seed error bar — the tail is not load-bearing. Second, the *atmosphere law*: repeating
-the J0740 swap under the Eddington (1+1.5μ) and Chandrasekhar H(μ) limb-darkening laws reproduces
-the same positive, spin-diluted signal (+0.13…+0.20 static, +0.03…+0.06 at 346.5 Hz), with the
-magnitude tracking each law's limb-darkening slope b. The effect is a property of limb darkening,
-not of the Thomson slab.**
-
-Both are run static *and* at the real 346.5 Hz — because aberration samples the beaming at
-μ' = δ cos α, reaching into the tail at faint phases, the spin-diluted number carries its own tail
-sensitivity (the one place it shows: Miller at spin, |δ(ΔPF)| = 0.006, where the grazing spots let
-aberration pull the tail into the min/max statistic). Both drivers reproduce the exact-bending
-headline (+0.137/+0.195 static, +0.037/+0.061 at spin) as their reference case, so the perturbation
-is the only thing changing. Pure interpolation + geometry, seconds each. Suite **127 green**.
-
-![E3: ΔPF under three independent limb-darkening laws (Thomson slab, Eddington, Chandrasekhar H), both anchors, frozen vs 346.5 Hz — positive and PF-live everywhere, magnitude tracking slope b](data/e3_atmosphere_laws.png)
-
-📐 **Full derivation:** [v0.9.12 — Tail Sensitivity + Atmosphere-Law Robustness](docs/deep-dives/v0.9.12-tail-and-robustness.md)
-(E2 bin-resampling σ + H-tail splice; E3 three-law robustness rows, both spins)
-
-**Next:** E1 — propagate the numbers and three-part routing framing through README/anchor scripts,
-then Track F scope paragraphs → v1.0.0-rc, the paper.
 
 ### v0.9.10 — Doppler at the real spin: the PF systematic re-routes into waveform shape
 *2026-07-07 · commit `<pending>`*
@@ -932,68 +932,93 @@ These are noted as limitations in the paper and provide clear directions for fol
 ```
 mc-radiative-transfer/
 ├── README.md                  # This file (overview + progress log)
+├── REPRODUCING.md             # Script → artifact → paper-claim run order
+├── LICENSE                    # MIT (third-party data excluded — see note inside)
+├── CITATION.cff               # Citation metadata (Zenodo/GitHub)
 ├── pyproject.toml             # Package metadata (installable as `mcrt`)
-├── requirements.txt           # numpy, matplotlib, pytest
+├── requirements.txt           # Pinned: numpy, matplotlib, pytest
 ├── src/
 │   └── mcrt/                  # The simulation package
 │       ├── __init__.py
 │       ├── monte_carlo.py     # Photon + Simulation engine (optional rng for reproducibility)
 │       ├── utils.py           # Sampling & geometry primitives
-│       ├── beaming.py         # Flux → specific-intensity extraction
+│       ├── beaming.py         # Flux → specific-intensity extraction + I(μ) lookup
+│       ├── bending.py         # Exact Schwarzschild light bending (ψ(α), Jacobian)
+│       ├── rotating.py        # Doppler + aberration layer (δ, μ', band boost)
 │       ├── convergence.py     # Error-vs-N helpers (knee, target-N) for the convergence study
 │       ├── pulse.py           # Point-spot pulse profiles (geometry, bending, pulsed fraction)
 │       └── theory.py          # Eddington & Chandrasekhar H-function
-├── scripts/                   # Runnable entry points
-│   ├── validate_engine.py     # Validation + beaming-function plot
-│   ├── convergence_study.py   # Photon-count convergence study (error vs N, recommended N)
-│   ├── tau_sweep.py           # τ sweep → I(μ; τ) beaming-function library
+├── scripts/                   # Runnable entry points — see REPRODUCING.md for the run order
+│   ├── tau_sweep.py           # τ sweep → I(μ; τ) production beaming library (step 0)
+│   ├── d_isotropic_validate.py# H(μ) flux-space validation (paper Fig. 2 left)
+│   ├── code_comparison.py     # SD1a vs. the NICER code-comparison reference (Fig. 2 middle)
+│   ├── c1_doppler_validate.py # SD1c 200 Hz Doppler validation (Fig. 2 right)
+│   ├── j0740_anchor.py        # J0740 anchor: static ΔPF headline (Fig. 3)
+│   ├── j0030_anchor.py        # J0030 anchor: saturation + shape RMS (Fig. 4)
+│   ├── anchor_lib.py          # Shared multi-spot machinery for the anchors
+│   ├── a3_seed_errors.py      # Seed-to-seed error bars
+│   ├── b2_exact_bending.py    # Linear-vs-exact bending bias at the anchors
+│   ├── c2_doppler_coupling.py # Spin dilution, δ³/δ⁴ (Table 2 rows 1–2)
+│   ├── c3_band_doppler.py     # NICER-band boost (Table 2 row 3)
+│   ├── c4_caveat_audit.py     # Light-travel warp, oblateness, warp shape RMS (rows 4–5)
+│   ├── doppler_figures.py     # Dilution-ladder figure (Fig. 6)
+│   ├── phase_diagram.py       # Tiling-criterion regime map (Fig. 5)
+│   ├── validate_phase_diagram.py # Engine eclipse onset vs analytic criterion
+│   ├── e2_tail_sensitivity.py # Grazing-tail robustness
+│   ├── e3_atmosphere_laws.py  # Three-law (Eddington/H/Thomson) robustness
+│   ├── finite_cap.py          # Point-spot vs finite-cap robustness
+│   ├── convergence_study_v2.py# Error vs N over the full τ grid
+│   ├── beaming_pulse_sweep.py # isotropic-vs-realistic ΔPF over invented geometries
+│   ├── validate_engine.py     # Early validation + beaming-function plot
+│   ├── convergence_study.py   # v1 photon-count convergence study
 │   ├── pulse_demo.py          # Pulse-profile demo + analytic-check figure
-│   ├── code_comparison.py     # SD1a vs. the NICER code-comparison reference
-│   ├── beaming_pulse_sweep.py # isotropic-vs-realistic ΔPF over geometry × τ
 │   └── plot_paths.py          # 3D random-walk visualization
-├── tests/
+├── tests/                     # 127 tests
 │   ├── conftest.py            # Makes `mcrt` importable without install
-│   ├── test_physics.py        # Unit tests for the primitives + reproducible seeding
-│   ├── test_convergence.py    # Unit tests for the convergence helpers
-│   ├── test_pulse.py          # Unit tests for the pulse machinery + analytic check
-│   └── test_theory.py         # Unit tests for the H-function
+│   ├── test_physics.py        # Primitives + reproducible seeding
+│   ├── test_transport.py      # Transport engine (absorbing base, escapes)
+│   ├── test_convergence.py    # Convergence helpers
+│   ├── test_pulse.py          # Pulse machinery + analytic check
+│   ├── test_bending.py        # Exact Schwarzschild bending (+ SD1a residuals)
+│   ├── test_rotating.py       # Doppler/aberration (incl. 4-vector cross-check)
+│   ├── test_sensitivity.py    # Anchor sensitivity checks
+│   └── test_theory.py         # H-function
 ├── docs/
-│   ├── deep-dives/            # Per-version math deep dives
-│   │   ├── v0.1.0-sampling-primitives.md
-│   │   ├── v0.2.0-photon-transport.md
-│   │   ├── v0.5.0-validation.md
-│   │   ├── v0.5.1-beaming-correction.md
-│   │   ├── v0.6.0-beaming-library.md
-│   │   ├── v0.6.1-isotropic-injection.md
-│   │   ├── v0.6.2-reproducible-seeding.md
-│   │   ├── v0.7.0-convergence-study.md
-│   │   ├── v0.8.0-pulse-profile.md
-│   │   ├── v0.8.1-code-comparison.md
-│   │   ├── v0.9.0-beaming-pulse.md
-│   │   ├── make_figures.py    # Regenerates the figures below
+│   ├── deep-dives/            # Per-version math deep dives, v0.1.0 … v0.9.12
+│   │   ├── make_figures.py    # Regenerates the explanatory figures
 │   │   └── figures/           # Explanatory figures (01–08)
-│   ├── paper/                 # Paper-prep bundle — the three docs, self-contained
+│   ├── paper/                 # The paper + its prep bundle
+│   │   ├── paper_template.tex    # The manuscript (AASTeX v7)
+│   │   ├── refs.bib              # BibTeX database
+│   │   ├── geometry_figure.tex   # Native TikZ redraw of the geometry (Fig. 1)
 │   │   ├── pipeline-physics.md   # Methods: the code → equation chain
 │   │   ├── references.md         # Central bibliography (papers + data sources)
 │   │   └── claims-evidence.md    # Results: claim → evidence map
 │   ├── monte_carlo_nicer.pdf  # Task list / research plan
-│   ├── RNAA_draft.pdf         # Paper draft
 │   └── proposal/              # Proposal + future directions
-└── data/                      # Simulation outputs (plots + raw data)
+└── data/                      # Simulation outputs: figures (.png) + evidence base (.npz)
 ```
 
 ### Setup & usage
 
 ```bash
-pip install -e .              # makes `mcrt` importable everywhere
-python scripts/validate_engine.py   # validation + beaming-function plot
-python scripts/convergence_study.py # photon-count convergence study (error vs N)
-python scripts/pulse_demo.py        # pulse-profile demo + analytic-check figure
-python scripts/code_comparison.py   # vs. the NICER code comparison (needs the L26 reference — see docs/paper/references.md)
-python scripts/beaming_pulse_sweep.py  # isotropic-vs-realistic ΔPF over geometry × τ
-python scripts/plot_paths.py        # random-walk visualization
-pytest                              # run the unit tests
+pip install -r requirements.txt   # pinned versions (bit-for-bit MC reproducibility)
+pip install -e .                  # makes `mcrt` importable everywhere
+pytest                            # run the test suite (127 tests)
 ```
+
+**To reproduce the paper's numbers and figures**, follow the script → artifact →
+claim run order in [REPRODUCING.md](REPRODUCING.md). The short version:
+
+```bash
+PYTHONPATH=src:scripts python3 scripts/tau_sweep.py            # step 0: the MC beaming library
+PYTHONPATH=src:scripts python3 scripts/j0740_anchor.py         # ΔPF headline (paper Fig. 3)
+PYTHONPATH=src:scripts python3 scripts/j0030_anchor.py         # saturation + shape (paper Fig. 4)
+PYTHONPATH=src:scripts python3 scripts/c2_doppler_coupling.py  # spin dilution (Table 2)
+```
+
+The claim → evidence direction lives in
+[docs/paper/claims-evidence.md](docs/paper/claims-evidence.md).
 
 ### Timeline
 
@@ -1010,7 +1035,12 @@ pytest                              # run the unit tests
 - [x] **Week 9 — v0.8.1**: Code-comparison check — reproduced the Bogdanov L26 SD1a waveform (matched the IM reference to ~1%, limited by the Beloborodov approximation)
 - [x] **v0.9.0**: Isotropic-vs-realistic ΔPF at fixed geometry; limb darkening sharpens the pulse, ΔPF up to ~+0.16 (the real number replacing the draft's fabricated "∼15%")
 - [x] **v0.9.1**: Real-star anchor at PSR J0030+0451 (Riley 2019 / Miller 2019) — its spots eclipse, so the pulsed fraction saturates and the beaming systematic moves into the waveform shape (~6–8% RMS); the systematic's observability is geometry-dependent
-- [ ] **Phase 4**: Analysis & paper completion
+- [x] **v0.9.2–v0.9.6**: Second anchor at PSR J0740+6620 (ΔPF lands in the pulsed fraction), the tiling-criterion phase diagram, seed error bars, and finite-cap robustness
+- [x] **v0.9.7–v0.9.9.1**: Convergence study redo (error ∝ N^−1/2), production 5-seed escape-matched library, and exact Schwarzschild bending at the anchors (the linear map's −0.0066 bias retired)
+- [x] **v0.9.10**: Doppler + aberration at the real 346.5 Hz — the PF systematic drains to +0.02…+0.07 while the ~0.10 RMS waveform-shape difference survives (spin as the second router)
+- [x] **v0.9.11**: Exact transport validation — the isotropic engine reproduces Chandrasekhar's H(μ) at flux-space χ² = 0.70
+- [x] **v0.9.12**: Robustness close-out — grazing tail and atmosphere law both measured, neither moves the headline
+- [x] **Phase 4**: Analysis & paper — manuscript drafted and verified against the codebase (`docs/paper/paper_template.tex`); submission pending
 
 ---
 

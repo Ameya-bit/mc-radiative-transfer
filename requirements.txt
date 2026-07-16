@@ -1,3 +1,6 @@
-numpy
-matplotlib
-pytest
+# Pinned to the versions used for the production runs (Python 3.13.13).
+# Bit-for-bit Monte Carlo reproducibility depends on numpy's RNG stream,
+# so use these exact versions when checking the paper's seeded numbers.
+numpy==2.4.4
+matplotlib==3.10.9
+pytest==9.0.3

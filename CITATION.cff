@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "mc-radiative-transfer: Monte Carlo radiative transfer and pulse-profile pipeline for the isotropic-beaming systematic in neutron-star hot spots"
+version: 0.9.12
+date-released: 2026-07-15
+license: MIT
+repository-code: "https://github.com/Ameya-bit/mc-radiative-transfer"
+authors:
+  - family-names: Panchal
+    given-names: Ameya
+    affiliation: "Penn State University, University Park, PA, USA"
+  - family-names: ud-Doula
+    given-names: Asif
+    affiliation: "Penn State Scranton, Dunmore, PA, USA"
+keywords:
+  - neutron stars
+  - radiative transfer
+  - Monte Carlo methods
+  - pulse-profile modeling
+  - X-ray pulsars
