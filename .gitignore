@@ -20,6 +20,9 @@ data/*
 !data/.gitkeep
 !data/*.png
 !data/*.npz
+# NICER count levels digitised from Miller et al. (2019, 2021) for the APSS
+# revision; read by scripts/nicer_counts.py.
+!data/nicer_counts_*.csv
 
 # Manuscript and submission material stay private (text, bibliography, referee
 # correspondence, poster, submission bundles). Only the paper-prep documentation

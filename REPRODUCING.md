@@ -112,6 +112,7 @@ reads the artifacts they produce.
 | Script | Writes | Paper |
 |---|---|---|
 | `r1_revision_checks.py` | `r1_revision_checks.npz` | six checks, listed below |
+| `nicer_counts.py` | reads `nicer_counts_j0030.csv`, `nicer_counts_j0740.csv` | adopted NICER count levels (§2.4): background / spot counts per bin digitised from Miller et al. 2019 Fig. 10 and 2021 Fig. 6 |
 
 ```bash
 PYTHONPATH=src:scripts python3 scripts/r1_revision_checks.py
