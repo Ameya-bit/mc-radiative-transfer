@@ -1,10 +1,20 @@
 # Reproducing the paper
 
-Every number and figure in the paper ("The Systematic in the isotropic assumption
-for Neutron stars", `docs/paper/paper_template.tex`) is produced by a script in
-`scripts/` and saved to an artifact in `data/`. This file gives the execution
-order (script → artifact → paper location). For the reverse direction — "which
-file backs this specific claim?" — see `docs/paper/claims-evidence.md`.
+Every number and figure in the paper is produced by a script in `scripts/` and
+saved to an artifact in `data/`. This file gives the execution order (script →
+artifact → paper location). For the reverse direction — "which file backs this
+specific claim?" — see `docs/paper/claims-evidence.md`.
+
+**Manuscript sources are not in this repository.** The LaTeX, bibliography,
+and submission material for the *Astrophysics and Space Science* version
+(`docs/paper/apss_template.tex`, Springer `sn-jnl` class) and the earlier
+AASTeX drafting copy (`docs/paper/paper_template.tex`) are kept privately and
+ignored by git. What is tracked is everything needed to regenerate the numbers
+and figures: the scripts, the `data/*.npz` artifacts, the figure generator in
+`docs/paper/poster/updated_graphs/`, and the paper-prep documentation
+(`docs/paper/*.md`). Figures for the APSS version are the redesigned set in
+`docs/paper/poster/updated_graphs/` (see that folder's `README.md`); figures
+for the AASTeX version are the originals in `data/`.
 
 ## Setup
 
@@ -93,6 +103,54 @@ Everything else runs without it.
 **Figure 1** (`docs/paper/geometry_figure.pdf`) is a native TikZ redraw — build
 `docs/paper/geometry_figure.tex` with pdflatex.
 
+## Revision round (APSS submission)
+
+These were added while preparing `docs/paper/apss_template.tex` in response to
+a pre-submission referee-style review. Run **after** Steps 0–6, since the script
+reads the artifacts they produce.
+
+| Script | Writes | Paper |
+|---|---|---|
+| `r1_revision_checks.py` | `r1_revision_checks.npz` | six checks, listed below |
+
+```bash
+PYTHONPATH=src:scripts python3 scripts/r1_revision_checks.py
+```
+
+Reads `beaming_library.npz`, `a3_seed_errors.npz`, `e2_tail_sensitivity.npz`,
+`b2_exact_bending.npz`, `finite_cap.npz`. Runtime a few minutes (R1's grid
+rebuilds an `ExactBending` map per trial compactness).
+
+| Check | Answers | Result used in the paper |
+|---|---|---|
+| **R1** toy compactness inversion | "what is the bias worth at the inference level?" — fits the isotropic model to the beamed J0740 profile with only `u` free | Δu ≈ −0.13 both fits ⇒ radius overestimated by **+4.6 km** (Riley) / **+5.9 km** (Miller); rms mismatch drops 0.107→0.039 and 0.125→0.035 (§3.1, §5, abstract) |
+| **R2** J0030 at 205.53 Hz | the spinning J0030 numbers the abstract previously implied but never computed | ΔPF stays 0.0000 (saturation is geometric); shape rms 0.061→**0.060** (Riley), 0.058→**0.057** (Miller) (§3.2, abstract) |
+| **R3** slope sensitivity | whether the b = 1.72 vs 1.79 discrepancy matters | ΔPF differs by only **0.004** between the two linear laws (§2.3, replaces the old footnote) |
+| **R4** exact-bending boundary | whether the tiling criterion's placement survives exact bending across the whole grid | boundary shifts by ≤ **0.15 cyc** (J0740-like) / **0.10 cyc** (J0030-like); no anchor changes regime (§3.3, Figure 5's second boundary curve) |
+| **R5** error budget | separates the statistical bar from the systematics | seed ±0.0032/±0.0052; tail 0.0059; bending −0.0066/−0.0060; point-spot +0.0036/+0.0017 ⇒ total systematic ≲0.01 (§3.1) |
+| **R6** Vinciguerra+2024 J0030 modes | whether the criterion predicts the regime of the *reanalyzed* J0030 geometry | both favored modes **tile** (floor 0.60 / 0.52) ⇒ PF-sensitive regime with ΔPF **+0.24 / +0.25** — the same star crosses the boundary, as the criterion predicts (§3.3, §5) |
+
+R6's input geometry is hard-coded in the script from Vinciguerra et al. (2024,
+ApJ 961, 62) online **Figure set 6** — the hot-region medians are *not* printed
+in that paper's tables. Compactness is formed as `u = 2·1.47662·(M/M☉)/R_km`
+and the separation as `Δφ = (φ_s + 0.5) − φ_p`, the half-cycle following their
+Table 1 definition of the secondary phase. Because both favored models are of
+protruding double-temperature type (a small hot cap offset inside a larger cool
+one), the check uses the hot component as a point-spot stand-in and is
+indicative for the ΔPF value, though the regime assignment follows from
+geometry alone.
+
+## Figures for the APSS submission
+
+```bash
+python3 docs/paper/poster/updated_graphs/make_updated_figs.py
+```
+
+Regenerates all five plotted paper figures as vector PDF plus 600 dpi PNG,
+reading the same `data/*.npz` artifacts (including `r1_revision_checks.npz` for
+Figure 5's exact-bending boundary). Rationale, the figure audit, and the
+surveyed APSS figure conventions are in that folder's `README.md`.
+
 ## Tests
 
 ```bash
@@ -104,9 +162,31 @@ quoted in §2.3 (machine-precision agreement).
 
 ## Building the paper
 
+The commands below apply to a checkout that has the private manuscript sources
+in `docs/paper/` (they are git-ignored; see the note at the top of this file).
+
+AASTeX drafting copy:
+
 ```bash
 cd docs/paper
 pdflatex paper_template.tex && bibtex paper_template && pdflatex paper_template.tex && pdflatex paper_template.tex
 ```
 
-Figures are pulled from `data/` via `\graphicspath`.
+APSS submission version (needs `sn-jnl.cls` and `sn-basic.bst` alongside it):
+
+```bash
+cd docs/paper
+pdflatex apss_template.tex && bibtex apss_template && pdflatex apss_template.tex && pdflatex apss_template.tex
+```
+
+Figures are pulled from `data/` and `docs/paper/poster/updated_graphs/` via
+`\graphicspath`. `apss_template.tex` renders revision changes as markup —
+additions in red, deletions struck through — controlled by one switch near the
+top of the preamble:
+
+```latex
+\showmarkuptrue    % review copy: additions red, deletions struck out
+\showmarkupfalse   % clean copy: additions plain black, deletions removed
+```
+
+Flip it to `\showmarkupfalse` to produce the version for submission.

@@ -987,10 +987,8 @@ mc-radiative-transfer/
 │   ├── deep-dives/            # Per-version math deep dives, v0.1.0 … v0.9.12
 │   │   ├── make_figures.py    # Regenerates the explanatory figures
 │   │   └── figures/           # Explanatory figures (01–08)
-│   ├── paper/                 # The paper + its prep bundle
-│   │   ├── paper_template.tex    # The manuscript (AASTeX v7)
-│   │   ├── refs.bib              # BibTeX database
-│   │   ├── geometry_figure.tex   # Native TikZ redraw of the geometry (Fig. 1)
+│   ├── paper/                 # Paper-prep bundle (manuscript sources are kept out of the repo)
+│   │   ├── poster/updated_graphs/make_updated_figs.py   # Regenerates the paper figures
 │   │   ├── pipeline-physics.md   # Methods: the code → equation chain
 │   │   ├── references.md         # Central bibliography (papers + data sources)
 │   │   └── claims-evidence.md    # Results: claim → evidence map
